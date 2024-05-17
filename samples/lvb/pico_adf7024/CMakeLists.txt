@@ -4,6 +4,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 set(BOARD rpi_pico)
 
+list(APPEND CONF_FILE "prj.conf")
 list(APPEND CONF_FILE "usb-cdc-acm.conf")
 
 find_package(Zephyr)
