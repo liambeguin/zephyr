@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 Liam Beguin <liambeguin@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,shell-uart = &usb_cdc;
+	};
+};
+
+&zephyr_udc0 {
+	usb_cdc: usb_cdc_0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
