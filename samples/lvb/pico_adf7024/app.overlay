@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
 / {
 	chosen {
 		zephyr,shell-uart = &usb_cdc;
@@ -15,3 +17,22 @@
 		compatible = "zephyr,cdc-acm-uart";
 	};
 };
+
+&spi0_default {
+	group1 {
+		pinmux = <SPI0_CSN_P1>, <SPI0_CSN_P5>, <SPI0_SCK_P2>, <SPI0_TX_P3>;
+	};
+	group2 {
+		pinmux = <SPI0_RX_P0>;
+		input-enable;
+	};
+};
+
+&pico_spi {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>,
+		   <&gpio0 5 GPIO_ACTIVE_LOW>;
+};
+
