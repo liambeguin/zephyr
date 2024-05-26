@@ -9,7 +9,7 @@
 #include <zephyr/drivers/uart.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(main, CONFIG_MAIN_LOG_LEVEL);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 // Devicetree
 #define CONSOLE_DEVICE DEVICE_DT_GET(DT_CHOSEN(zephyr_console))
