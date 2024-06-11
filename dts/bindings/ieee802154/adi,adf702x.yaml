@@ -1,0 +1,18 @@
+# Copyright (c) 2024 HawkEye 360
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI ADF702X 802.15.4 wireless transceiver
+
+compatible: "adi,adf702x"
+
+include: spi-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+
+  local-mac-address:
+    type: uint8-array
+    description: |
+      Specifies the MAC address that was assigned to the network
+      device

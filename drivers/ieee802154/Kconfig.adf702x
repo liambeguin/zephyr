@@ -1,0 +1,30 @@
+# ADI ADF702X configuration options
+# Copyright (c) 2024 HawkEye 360
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_ADF702X
+	bool "ADI ADF702X Driver support"
+	default y
+	select SPI
+	select GPIO
+
+if IEEE802154_ADF702X
+
+config IEEE802154_ADF702X_RX_STACK_SIZE
+	int "Driver's internal RX thread stack size"
+	default 800
+	help
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  a too little one, this option makes it easy to play with the size.
+
+config IEEE802154_ADF702X_INIT_PRIO
+	int "ADF702X initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. Beware adf702x requires gpio and spi to
+	  be ready first (and sometime gpio should be the very first as spi
+	  might need it too). And of course it has to start before the net stack.
+
+endif
