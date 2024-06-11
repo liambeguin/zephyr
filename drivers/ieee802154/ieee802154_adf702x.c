@@ -427,6 +427,9 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 	case 2:
 		adf702x_ram_dump_conf(dev);
 		break;
+	case 3:
+		adf702x_set_fw_state(dev, FW_STATE_PHY_RX);
+		break;
 	default:
 		return -ENOENT;
 	}
