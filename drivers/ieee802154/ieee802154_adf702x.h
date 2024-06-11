@@ -64,6 +64,7 @@
 struct adf702x_config {
 	struct gpio_dt_spec irq_gpio;
 	struct spi_dt_spec spi;
+	const char *name;
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 	uint8_t inst;

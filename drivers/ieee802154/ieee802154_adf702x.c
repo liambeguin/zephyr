@@ -561,7 +561,7 @@ static int adf702x_init(const struct device *dev)
 	struct adf702x_context *ctx = dev->data;
 	char thread_name[20];
 
-	LOG_INST_INF(conf->log, "Initializing ADF702X Transceiver");
+	LOG_INST_INF(conf->log, "Initializing ADF702X Transceiver %s", conf->name);
 
 	ctx->dev = dev;
 	k_sem_init(&ctx->trx_isr_lock, 0, 1);
@@ -615,6 +615,7 @@ static int adf702x_init(const struct device *dev)
 	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, n, LOG_LEVEL_DBG);	\
 	static const struct adf702x_config adf702x_ctx_config_##n = {	\
 		.inst = n,						\
+		.name = DT_NODE_FULL_NAME(DT_DRV_INST(n)),		\
 		.irq_gpio = GPIO_DT_SPEC_INST_GET(n, irq_gpios),	\
 		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) |	\
 				            SPI_TRANSFER_MSB, 0),	\
