@@ -5,11 +5,12 @@
  */
 
 #define DT_DRV_COMPAT adi_adf702x
-#define LOG_MODULE_NAME ieee802154_adf702x
+#define LOG_MODULE_NAME adf702x
 /* #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL */
 #define LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_instance.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
@@ -45,9 +46,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static void adf702x_print_status(const struct device *dev)
 {
+	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 
-	LOG_DBG("status word: 0x%02X -> SPI_READY:%d IRQ_STATUS:%d CMD_READY:%d FW_STATE:0x%02x",
+	LOG_INST_DBG(conf->log, "status word: 0x%02X -> SPI_READY:%d IRQ_STATUS:%d CMD_READY:%d FW_STATE:0x%02x",
 		ctx->status,
 		(uint8_t)FIELD_GET(STATUS_SPI_READY, ctx->status),
 		(uint8_t)FIELD_GET(STATUS_IRQ_STATUS, ctx->status),
@@ -55,19 +57,19 @@ static void adf702x_print_status(const struct device *dev)
 		(uint8_t)FIELD_GET(STATUS_FW_STATE, ctx->status));
 
 	switch((uint8_t)FIELD_GET(STATUS_FW_STATE, ctx->status)) {
-	case FW_STATE_INIT: LOG_WRN("FW_STATE_INIT"); break;
-	case FW_STATE_BUSY: LOG_WRN("FW_STATE_BUSY"); break;
-	case FW_STATE_PHY_OFF: LOG_WRN("FW_STATE_PHY_OFF"); break;
-	case FW_STATE_PHY_ON: LOG_WRN("FW_STATE_PHY_ON"); break;
-	case FW_STATE_PHY_RX: LOG_WRN("FW_STATE_PHY_RX"); break;
-	case FW_STATE_PHY_TX: LOG_WRN("FW_STATE_PHY_TX"); break;
-	case FW_STATE_PHY_SLEEP: LOG_WRN("FW_STATE_PHY_SLEEP"); break;
-	case FW_STATE_GET_RSSI: LOG_WRN("FW_STATE_GET_RSSI"); break;
-	case FW_STATE_IR_CAL: LOG_WRN("FW_STATE_IR_CAL"); break;
-	case FW_STATE_AES_DECRYPT_INIT: LOG_WRN("FW_STATE_AES_DECRYPT_INIT"); break;
-	case FW_STATE_AES_DECRYPT: LOG_WRN("FW_STATE_AES_DECRYPT"); break;
-	case FW_STATE_AES_ENCRYPT: LOG_WRN("FW_STATE_AES_ENCRYPT"); break;
-	default: LOG_WRN("UNKNOWN FW_STATE");  break;
+	case FW_STATE_INIT: LOG_INST_WRN(conf->log, "FW_STATE_INIT"); break;
+	case FW_STATE_BUSY: LOG_INST_WRN(conf->log, "FW_STATE_BUSY"); break;
+	case FW_STATE_PHY_OFF: LOG_INST_WRN(conf->log, "FW_STATE_PHY_OFF"); break;
+	case FW_STATE_PHY_ON: LOG_INST_WRN(conf->log, "FW_STATE_PHY_ON"); break;
+	case FW_STATE_PHY_RX: LOG_INST_WRN(conf->log, "FW_STATE_PHY_RX"); break;
+	case FW_STATE_PHY_TX: LOG_INST_WRN(conf->log, "FW_STATE_PHY_TX"); break;
+	case FW_STATE_PHY_SLEEP: LOG_INST_WRN(conf->log, "FW_STATE_PHY_SLEEP"); break;
+	case FW_STATE_GET_RSSI: LOG_INST_WRN(conf->log, "FW_STATE_GET_RSSI"); break;
+	case FW_STATE_IR_CAL: LOG_INST_WRN(conf->log, "FW_STATE_IR_CAL"); break;
+	case FW_STATE_AES_DECRYPT_INIT: LOG_INST_WRN(conf->log, "FW_STATE_AES_DECRYPT_INIT"); break;
+	case FW_STATE_AES_DECRYPT: LOG_INST_WRN(conf->log, "FW_STATE_AES_DECRYPT"); break;
+	case FW_STATE_AES_ENCRYPT: LOG_INST_WRN(conf->log, "FW_STATE_AES_ENCRYPT"); break;
+	default: LOG_INST_WRN(conf->log, "UNKNOWN FW_STATE");  break;
 	}
 }
 
@@ -86,7 +88,7 @@ static int adf702x_get_status(const struct device *dev)
 
 	ret = spi_transceive_dt(&conf->spi, &tx_set, &rx_set);
 	if (ret) {
-		LOG_ERR("%s: spi_transceive FAIL %d\n", __func__, ret);
+		LOG_INST_ERR(conf->log, "%s: spi_transceive FAIL %d\n", __func__, ret);
 		return ret;
 	}
 
@@ -104,7 +106,7 @@ static int adf702x_set_command(const struct device *dev, uint8_t command)
 
 	ret = spi_transceive_dt(&conf->spi, &tx_set, NULL);
 	if (ret)
-		LOG_ERR("%s: spi_transceive FAIL %d\n", __func__, ret);
+		LOG_INST_ERR(conf->log, "%s: spi_transceive FAIL %d\n", __func__, ret);
 
 	return ret;
 }
@@ -112,6 +114,7 @@ static int adf702x_set_command(const struct device *dev, uint8_t command)
 
 static int adf702x_set_fw_state(const struct device *dev, uint8_t fw_state)
 {
+	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 	int ret = 0;
 	int cnt = 0;
@@ -133,7 +136,7 @@ static int adf702x_set_fw_state(const struct device *dev, uint8_t fw_state)
 		adf702x_set_command(dev, CMD_PHY_TX);
 		break;
 	default:
-		LOG_ERR("Unknown state: 0x%x", fw_state);
+		LOG_INST_ERR(conf->log, "Unknown state: 0x%x", fw_state);
 		return -EINVAL;
 	}
 
@@ -144,7 +147,7 @@ static int adf702x_set_fw_state(const struct device *dev, uint8_t fw_state)
 	} while((FIELD_GET(STATUS_FW_STATE, ctx->status) != fw_state) && (cnt < MAX_POLL_LOOPS));
 
 	if (cnt == MAX_POLL_LOOPS)
-		LOG_WRN("set_fw_status: TIMEOUT");
+		LOG_INST_WRN(conf->log, "set_fw_status: TIMEOUT");
 
 	return ret;
 }
@@ -175,29 +178,31 @@ static int adf702x_ram_read(const struct device *dev, int addr, int len, uint8_t
 
 	ret = spi_transceive_dt(&conf->spi, &tx_set, &rx_set);
 	if (ret)
-		LOG_ERR("%s: spi_transceive FAIL %d\n", __func__, ret);
+		LOG_INST_ERR(conf->log, "%s: spi_transceive FAIL %d\n", __func__, ret);
 
 	return ret;
 }
 
 static int adf702x_ram_dump_conf(const struct device *dev)
 {
+	const struct adf702x_config *conf = dev->config;
 	uint8_t conf_regs[64] = {0};
 
 	adf702x_ram_read(dev, 0x100, 64, conf_regs);
-	LOG_HEXDUMP_ERR(conf_regs, 64, "LVB:");
+	LOG_INST_HEXDUMP_ERR(conf->log, conf_regs, 64, "LVB:");
 
 	return 0;
 }
 
 static int adf702x_dump_pkt_ram(const struct device *dev, uint8_t len)
 {
+	const struct adf702x_config *conf = dev->config;
 	uint8_t pram[256] = {0};
 
 	adf702x_ram_read(dev, ADF702X_TX_BASE_ADR, len, pram);
 
-	LOG_DBG("TX Frame: length: %02X", pram[0]);
-	LOG_HEXDUMP_DBG(pram, len, "payload:");
+	LOG_INST_DBG(conf->log, "TX Frame: length: %02X", pram[0]);
+	LOG_INST_HEXDUMP_DBG(conf->log, pram, len, "payload:");
 
 	return 0;
 }
@@ -217,19 +222,20 @@ static int adf702x_ram_write(const struct device *dev, int addr, int len, uint8_
 
 	ret = spi_transceive_dt(&conf->spi, &tx_set, NULL);
 	if (ret)
-		LOG_ERR("%s: spi_transceive FAIL %d\n", __func__, ret);
+		LOG_INST_ERR(conf->log, "%s: spi_transceive FAIL %d\n", __func__, ret);
 
 	return ret;
 }
 
 static int adf702x_packet_write(const struct device *dev, uint8_t *data, uint8_t len)
 {
+	const struct adf702x_config *conf = dev->config;
 	uint8_t len_plus_one = len + 1;
 	/* uint8_t len_plus_one = 0; */
 	int ret;
 
 	if (len > 256) {
-		LOG_ERR("Payload too large: %d", len);
+		LOG_INST_ERR(conf->log, "Payload too large: %d", len);
 		return -EMSGSIZE;
 	}
 
@@ -273,8 +279,9 @@ static void adf702x_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct adf702x_context *ctx = dev->data;
+	const struct adf702x_config *conf = dev->config;
 
-	LOG_DBG("iface init");
+	LOG_INST_DBG(conf->log, "iface init");
 
 	ctx->iface = iface;
 
@@ -296,7 +303,7 @@ static int adf702x_cca(const struct device *dev)
 	int ret = 0;
 
 	// TODO
-	LOG_DBG("CCA TODO");
+	LOG_INST_DBG(conf->log, "CCA TODO");
 	return 0;
 
 	// must be in PHY_ON
@@ -326,6 +333,7 @@ static int adf702x_tx(const struct device *dev,
 		      struct net_pkt *pkt,
 		      struct net_buf *frag)
 {
+	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 	int ret;
 
@@ -338,14 +346,14 @@ static int adf702x_tx(const struct device *dev,
 
 	if (FIELD_GET(ADF702X_BIT_PKT_LENGTH_CONTROL_PKT_LEN_MODE,
 		      ctx->conf_regs.packet_length_control)) {
-		LOG_ERR("Fixed packet lenght not supported");
+		LOG_INST_ERR(conf->log, "Fixed packet lenght not supported");
 		return -EINVAL;
 	}
 
 	k_sem_reset(&ctx->trx_tx_sync);
 	ret = adf702x_packet_write(dev, frag->data, frag->len);
 	if (ret) {
-		LOG_ERR("Failed to write to packet RAM");
+		LOG_INST_ERR(conf->log, "Failed to write to packet RAM");
 		return ret;
 	}
 
@@ -360,11 +368,12 @@ static int adf702x_tx(const struct device *dev,
 
 static int adf702x_start(const struct device *dev)
 {
+	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 	uint8_t auxram[] = {0x00};
 	int ret;
 
-	LOG_DBG("start");
+	LOG_INST_DBG(conf->log, "start");
 	if (ctx->is_up)
 		return -EALREADY;
 
@@ -381,10 +390,11 @@ static int adf702x_start(const struct device *dev)
 
 static int adf702x_stop(const struct device *dev)
 {
+	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 	int ret;
 
-	LOG_DBG("stop");
+	LOG_INST_DBG(conf->log, "stop");
 	if (!ctx->is_up)
 		return -EALREADY;
 
@@ -400,6 +410,7 @@ static int adf702x_stop(const struct device *dev)
 static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 			    struct ieee802154_attr_value *value)
 {
+	const struct adf702x_config *conf = dev->config;
 	/* struct adf702x_context *ctx = dev->data; */
 	uint8_t bram[64] = {0};
 
@@ -411,7 +422,7 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 	case 1:
 		adf702x_ram_read(dev, value->phy_supported_channel_pages, 1, bram);
 		value->phy_supported_channel_pages = bram[0];
-		LOG_WRN("value: %02X", bram[0]);
+		LOG_INST_WRN(conf->log, "value: %02X", bram[0]);
 		break;
 	case 2:
 		adf702x_ram_dump_conf(dev);
@@ -425,9 +436,10 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 
 static int adf702x_cw(const struct device *dev)
 {
+	const struct adf702x_config *conf = dev->config;
 	uint8_t auxram[] = {0x03};
 
-	LOG_DBG("CW");
+	LOG_INST_DBG(conf->log, "CW");
 
 	adf702x_get_status(dev);
 	adf702x_set_fw_state(dev, FW_STATE_PHY_ON);
@@ -470,29 +482,30 @@ static void adf702x_thread_main(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	struct adf702x_context *ctx = p1;
+	const struct adf702x_config *conf = ctx->dev->config;
 	uint8_t isr_status[2] = {0};
 	int ret;
 
 	while (true) {
 		k_sem_take(&ctx->trx_isr_lock, K_FOREVER);
 		ret = adf702x_ram_read(ctx->dev, ADF702X_REG_INTERRUPT_SOURCE_0, 2, isr_status);
-		LOG_INF("got IRQ 0x%x 0x%x", isr_status[0], isr_status[1]);
+		LOG_INST_INF(conf->log, "got IRQ 0x%x 0x%x", isr_status[0], isr_status[1]);
 
 		if (isr_status[0] & ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_CRC_CORRECT) {
-			LOG_INF("Packet received, TODO");
+			LOG_INST_INF(conf->log, "Packet received, TODO");
 			/* isr_status[0] &= ~ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_CRC_CORRECT; */
 		}
 
 		if (isr_status[0] & ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_TX_EOF) {
-			LOG_INF("Packet sent, clearing irq");
+			LOG_INST_INF(conf->log, "Packet sent, clearing irq");
 			k_sem_give(&ctx->trx_tx_sync);
 			isr_status[0] &= ~ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_TX_EOF;
 		}
 
 		if (isr_status[0])
-			LOG_INF("Unhandled IRQ0: 0x%x", isr_status[0]);
+			LOG_INST_INF(conf->log, "Unhandled IRQ0: 0x%x", isr_status[0]);
 		if (isr_status[1])
-			LOG_INF("Unhandled IRQ1: 0x%x", isr_status[1]);
+			LOG_INST_INF(conf->log, "Unhandled IRQ1: 0x%x", isr_status[1]);
 
 		ret = adf702x_ram_write(ctx->dev, ADF702X_REG_INTERRUPT_SOURCE_0, 2, isr_status);
 	}
@@ -505,7 +518,7 @@ static inline int adf702x_configure_irq(const struct device *dev)
 	struct adf702x_context *ctx = dev->data;
 
 	if (!gpio_is_ready_dt(&conf->irq_gpio)) {
-		LOG_ERR("IRQ GPIO not ready");
+		LOG_INST_ERR(conf->log, "IRQ GPIO not ready");
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&conf->irq_gpio, GPIO_INPUT);
@@ -514,11 +527,11 @@ static inline int adf702x_configure_irq(const struct device *dev)
 	gpio_init_callback(&ctx->irq_cb, adf702x_irq_handler, BIT(conf->irq_gpio.pin));
 
 	if (gpio_add_callback(conf->irq_gpio.port, &ctx->irq_cb) < 0) {
-		LOG_ERR("Could not set IRQ callback.");
+		LOG_INST_ERR(conf->log, "Could not set IRQ callback.");
 		return -ENXIO;
 	}
 
-	LOG_INF("irq setup at %s pin %d", conf->irq_gpio.port->name, conf->irq_gpio.pin);
+	LOG_INST_INF(conf->log, "irq setup at %s pin %d", conf->irq_gpio.port->name, conf->irq_gpio.pin);
 
 	return 0;
 }
@@ -535,7 +548,7 @@ static inline int adf702x_configure_spi(const struct device *dev)
 	const struct adf702x_config *conf = dev->config;
 
 	if (!spi_is_ready_dt(&conf->spi)) {
-		LOG_ERR("SPI bus %s is not ready", conf->spi.bus->name);
+		LOG_INST_ERR(conf->log, "SPI bus %s is not ready", conf->spi.bus->name);
 		return -ENODEV;
 	}
 
@@ -548,19 +561,19 @@ static int adf702x_init(const struct device *dev)
 	struct adf702x_context *ctx = dev->data;
 	char thread_name[20];
 
-	LOG_INF("Initializing ADF702X Transceiver");
+	LOG_INST_INF(conf->log, "Initializing ADF702X Transceiver");
 
 	ctx->dev = dev;
 	k_sem_init(&ctx->trx_isr_lock, 0, 1);
 	k_sem_init(&ctx->trx_tx_sync, 0, 1);
 
 	if (conf->irq_gpio.port && adf702x_configure_irq(dev)) {
-		LOG_ERR("Unable to configure IRQ");
+		LOG_INST_ERR(conf->log, "Unable to configure IRQ");
 		return -EIO;
 	}
 
 	if (adf702x_configure_spi(dev)) {
-		LOG_ERR("Unable to configure SPI");
+		LOG_INST_ERR(conf->log, "Unable to configure SPI");
 		return -EIO;
 	}
 
@@ -581,7 +594,7 @@ static int adf702x_init(const struct device *dev)
 	while(!(ctx->status & STATUS_CMD_READY))
 		adf702x_get_status(dev);
 
-	LOG_INF("Configured, status: %X",
+	LOG_INST_INF(conf->log, "Configured, status: %X",
 		(uint8_t)FIELD_GET(STATUS_FW_STATE, ctx->status));
 
 	k_thread_create(&ctx->trx_thread,
@@ -599,11 +612,13 @@ static int adf702x_init(const struct device *dev)
 }
 
 #define IEEE802154_ADF702X_DEVICE_CONFIG(n)				\
+	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, n, LOG_LEVEL_DBG);	\
 	static const struct adf702x_config adf702x_ctx_config_##n = {	\
 		.inst = n,						\
 		.irq_gpio = GPIO_DT_SPEC_INST_GET(n, irq_gpios),	\
 		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) |	\
 				            SPI_TRANSFER_MSB, 0),	\
+		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, n)		\
 	}
 
 #define IEEE802154_ADF702X_DEVICE_DATA(n)				\
