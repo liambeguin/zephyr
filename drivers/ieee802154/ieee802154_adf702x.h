@@ -88,8 +88,8 @@ struct adf702x_context {
 	K_KERNEL_STACK_MEMBER(trx_stack,
 			      CONFIG_IEEE802154_ADF702X_RX_STACK_SIZE);
 
-	struct k_sem trx_isr_lock;
-	struct k_sem trx_tx_sync;
+	struct k_sem isr_lock;
+	struct k_sem tx_wait;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_ADF702X_H_ */

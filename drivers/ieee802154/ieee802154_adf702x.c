@@ -350,7 +350,7 @@ static int adf702x_tx(const struct device *dev,
 		return -EINVAL;
 	}
 
-	k_sem_reset(&ctx->trx_tx_sync);
+	k_sem_reset(&ctx->tx_wait);
 	ret = adf702x_packet_write(dev, frag->data, frag->len);
 	if (ret) {
 		LOG_INST_ERR(conf->log, "Failed to write to packet RAM");
@@ -361,7 +361,8 @@ static int adf702x_tx(const struct device *dev,
 	if (ret)
 		return ret;
 
-	k_sem_take(&ctx->trx_tx_sync, K_FOREVER);
+	/* Now we wait for the callback from isr */
+	k_sem_take(&ctx->tx_wait, K_FOREVER);
 
 	return 0;
 }
@@ -476,7 +477,32 @@ static inline void adf702x_irq_handler(const struct device *port,
 	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
 
-	k_sem_give(&ctx->trx_isr_lock);
+	k_sem_give(&ctx->isr_lock);
+}
+
+static void adf702x_process_rx_frame(const struct device *dev)
+{
+	const struct adf702x_config *conf = dev->config;
+	uint8_t pram[256] = {0};
+	uint8_t len = 0;
+
+	LOG_INST_INF(conf->log, "Packet received");
+
+	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR, 1, &len);
+	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR + 1, len, pram);
+
+	LOG_INST_DBG(conf->log, "RX Frame: length: %02X", len);
+	LOG_INST_HEXDUMP_DBG(conf->log, pram, len, "payload:");
+}
+
+static void adf702x_process_tx_frame(const struct device *dev)
+{
+	const struct adf702x_config *conf = dev->config;
+	struct adf702x_context *ctx = dev->data;
+
+	LOG_INST_INF(conf->log, "Packet sent, clearing irq");
+
+	k_sem_give(&ctx->tx_wait);
 }
 
 static void adf702x_thread_main(void *p1, void *p2, void *p3)
@@ -485,32 +511,33 @@ static void adf702x_thread_main(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	struct adf702x_context *ctx = p1;
-	const struct adf702x_config *conf = ctx->dev->config;
+	const struct device *dev = ctx->dev;
+	const struct adf702x_config *conf = dev->config;
 	uint8_t isr_status[2] = {0};
 	int ret;
 
 	while (true) {
-		k_sem_take(&ctx->trx_isr_lock, K_FOREVER);
-		ret = adf702x_ram_read(ctx->dev, ADF702X_REG_INTERRUPT_SOURCE_0, 2, isr_status);
+		k_sem_take(&ctx->isr_lock, K_FOREVER);
+		ret = adf702x_ram_read(dev, ADF702X_REG_INTERRUPT_SOURCE_0, 2, isr_status);
 		LOG_INST_INF(conf->log, "got IRQ 0x%x 0x%x", isr_status[0], isr_status[1]);
 
 		if (isr_status[0] & ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_CRC_CORRECT) {
-			LOG_INST_INF(conf->log, "Packet received, TODO");
-			/* isr_status[0] &= ~ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_CRC_CORRECT; */
+			isr_status[0] &= ~ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_CRC_CORRECT;
+			adf702x_process_rx_frame(dev);
 		}
 
 		if (isr_status[0] & ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_TX_EOF) {
-			LOG_INST_INF(conf->log, "Packet sent, clearing irq");
-			k_sem_give(&ctx->trx_tx_sync);
 			isr_status[0] &= ~ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_TX_EOF;
+			adf702x_process_tx_frame(dev);
 		}
 
-		if (isr_status[0])
-			LOG_INST_INF(conf->log, "Unhandled IRQ0: 0x%x", isr_status[0]);
-		if (isr_status[1])
-			LOG_INST_INF(conf->log, "Unhandled IRQ1: 0x%x", isr_status[1]);
+		if (isr_status[0] & ctx->conf_regs.interrupt_mask0)
+			LOG_INST_WRN(conf->log, "Unhandled IRQ0: 0x%02x", isr_status[0]);
+		if (isr_status[1] & ctx->conf_regs.interrupt_mask1)
+			LOG_INST_WRN(conf->log, "Unhandled IRQ1: 0x%02x", isr_status[1]);
 
-		ret = adf702x_ram_write(ctx->dev, ADF702X_REG_INTERRUPT_SOURCE_0, 2, isr_status);
+		// clear processed irq
+		ret = adf702x_ram_write(dev, ADF702X_REG_INTERRUPT_SOURCE_0, 2, isr_status);
 	}
 }
 
@@ -567,8 +594,8 @@ static int adf702x_init(const struct device *dev)
 	LOG_INST_INF(conf->log, "Initializing ADF702X Transceiver %s", conf->name);
 
 	ctx->dev = dev;
-	k_sem_init(&ctx->trx_isr_lock, 0, 1);
-	k_sem_init(&ctx->trx_tx_sync, 0, 1);
+	k_sem_init(&ctx->isr_lock, 0, 1);
+	k_sem_init(&ctx->tx_wait, 0, 1);
 
 	if (conf->irq_gpio.port && adf702x_configure_irq(dev)) {
 		LOG_INST_ERR(conf->log, "Unable to configure IRQ");
