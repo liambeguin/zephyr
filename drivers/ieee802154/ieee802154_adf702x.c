@@ -140,7 +140,6 @@ static int adf702x_set_fw_state(const struct device *dev, uint8_t fw_state)
 		return -EINVAL;
 	}
 
-	adf702x_get_status(dev);
 	do {
 		ret = adf702x_get_status(dev);
 		cnt++;
