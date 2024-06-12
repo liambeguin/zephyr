@@ -194,14 +194,18 @@ static int adf702x_ram_dump_conf(const struct device *dev)
 	return 0;
 }
 
-static int adf702x_dump_pkt_ram(const struct device *dev, uint8_t len)
+static int adf702x_packet_read(const struct device *dev, const char *prefix)
 {
 	const struct adf702x_config *conf = dev->config;
+	uint8_t header[1] = {0};
 	uint8_t pram[256] = {0};
+	uint8_t len = 0;
 
-	adf702x_ram_read(dev, ADF702X_TX_BASE_ADR, len, pram);
+	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR, 1, header);
+	len = header[0] - 1;
 
-	LOG_INST_DBG(conf->log, "TX Frame: length: %02X", pram[0]);
+	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR + 1, len, pram);
+	LOG_INST_DBG(conf->log, "%s Frame: length: %02X", prefix, len);
 	LOG_INST_HEXDUMP_DBG(conf->log, pram, len, "payload:");
 
 	return 0;
@@ -249,7 +253,7 @@ static int adf702x_packet_write(const struct device *dev, uint8_t *data, uint8_t
 	if (ret)
 		return ret;
 
-	adf702x_dump_pkt_ram(dev, len + 1);
+	adf702x_packet_read(dev, "TX");
 
 	return 0;
 }
@@ -483,17 +487,7 @@ static inline void adf702x_irq_handler(const struct device *port,
 
 static void adf702x_process_rx_frame(const struct device *dev)
 {
-	const struct adf702x_config *conf = dev->config;
-	uint8_t header[1] = {0};
-	uint8_t pram[256] = {0};
-	uint8_t len = 0;
-
-	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR, 1, header);
-	len = header[0] - 1;
-
-	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR + 1, len, pram);
-	LOG_INST_DBG(conf->log, "RX Frame: length: %02X", len);
-	LOG_INST_HEXDUMP_DBG(conf->log, pram, len, "payload:");
+	adf702x_packet_read(dev, "RX");
 }
 
 static void adf702x_process_tx_frame(const struct device *dev)
