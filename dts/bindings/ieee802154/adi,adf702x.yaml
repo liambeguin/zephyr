@@ -11,8 +11,8 @@ properties:
   irq-gpios:
     type: phandle-array
 
-  local-mac-address:
-    type: uint8-array
+  channel-frequency:
+    type: int
+    default: 896000000
     description: |
-      Specifies the MAC address that was assigned to the network
-      device
+      Default channel frequency to use for the transceiver.

@@ -609,7 +609,7 @@ static int adf702x_init(const struct device *dev)
 		adf702x_get_status(dev);
 
 	ctx->conf_regs = adf702x_default_conf_regs;
-	adf702x_regs_set_channel_freq(dev, 869000000);
+	adf702x_regs_set_channel_freq(dev, conf->channel_frequency);
 	adf702x_regs_set_pa_level(dev, 13.5);
 	adf7024_regs_set_profile(dev, PROFILE_A);
 
@@ -644,6 +644,9 @@ static int adf702x_init(const struct device *dev)
 		.irq_gpio = GPIO_DT_SPEC_INST_GET(n, irq_gpios),	\
 		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) |	\
 				            SPI_TRANSFER_MSB, 0),	\
+		.channel_frequency = DT_PROP_OR(DT_DRV_INST(n),		\
+						channel_frequency,	\
+						869000000),		\
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, n)		\
 	}
 

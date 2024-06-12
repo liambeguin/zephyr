@@ -28,6 +28,8 @@
 		reg = <0>;
 		spi-max-frequency = <1000000>;
 
+		channel-frequency = <869100000>;
+
 		irq-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 	};
 
@@ -36,6 +38,8 @@
 		compatible = "adi,adf702x";
 		reg = <1>;
 		spi-max-frequency = <1000000>;
+
+		channel-frequency = <869100000>;
 
 		irq-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 	};

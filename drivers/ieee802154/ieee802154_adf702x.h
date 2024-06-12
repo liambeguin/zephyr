@@ -66,6 +66,8 @@ struct adf702x_config {
 	struct spi_dt_spec spi;
 	const char *name;
 
+	uint32_t channel_frequency;
+
 	LOG_INSTANCE_PTR_DECLARE(log);
 	uint8_t inst;
 };
