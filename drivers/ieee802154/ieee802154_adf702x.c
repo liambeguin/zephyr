@@ -230,8 +230,7 @@ static int adf702x_ram_write(const struct device *dev, int addr, int len, uint8_
 static int adf702x_packet_write(const struct device *dev, uint8_t *data, uint8_t len)
 {
 	const struct adf702x_config *conf = dev->config;
-	uint8_t len_plus_one = len + 1;
-	/* uint8_t len_plus_one = 0; */
+	uint8_t header[1] = {0};
 	int ret;
 
 	if (len > 256) {
@@ -239,8 +238,10 @@ static int adf702x_packet_write(const struct device *dev, uint8_t *data, uint8_t
 		return -EMSGSIZE;
 	}
 
+	// on adf7023, header can also include address_match_offset
+	header[0] = len + 1;
 
-	ret = adf702x_ram_write(dev, ADF702X_TX_BASE_ADR, 1, &len_plus_one);
+	ret = adf702x_ram_write(dev, ADF702X_TX_BASE_ADR, 1, header);
 	if (ret)
 		return ret;
 
@@ -483,14 +484,14 @@ static inline void adf702x_irq_handler(const struct device *port,
 static void adf702x_process_rx_frame(const struct device *dev)
 {
 	const struct adf702x_config *conf = dev->config;
+	uint8_t header[1] = {0};
 	uint8_t pram[256] = {0};
 	uint8_t len = 0;
 
-	LOG_INST_INF(conf->log, "Packet received");
+	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR, 1, header);
+	len = header[0] - 1;
 
-	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR, 1, &len);
 	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR + 1, len, pram);
-
 	LOG_INST_DBG(conf->log, "RX Frame: length: %02X", len);
 	LOG_INST_HEXDUMP_DBG(conf->log, pram, len, "payload:");
 }
