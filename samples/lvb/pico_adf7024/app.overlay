@@ -6,9 +6,15 @@
 
 / {
 	chosen {
+		led0 = &led0;
+
 		zephyr,ieee802154_tx = &adf7024_tx;
 		zephyr,ieee802154_rx = &adf7024_rx;
 	};
+};
+
+&led0 {
+	gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 };
 
 &pico_spi {

@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/uart.h>
 
@@ -16,6 +17,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
+/* Misc devices */
+static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
+
 /* ieee802.15.4 devices */
 static struct ieee802154_radio_api *rx_api;
 static const struct device *const rx_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154_rx));
@@ -23,6 +27,17 @@ static const struct device *const rx_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee80
 static struct ieee802154_radio_api *tx_api;
 static const struct device *const tx_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154_tx));
 
+
+static int init_led(void)
+{
+	int flags = 0;
+
+	if (!gpio_is_ready_dt(&led))
+		return -ENODEV;
+
+	flags |= GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOGICAL | GPIO_OUTPUT_INIT_HIGH;
+	return gpio_pin_configure_dt(&led, flags);
+}
 
 static bool init_ieee802154(void)
 {
@@ -109,10 +124,13 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 	struct net_buf *buf;
 	int ret = 0;
 
+	gpio_pin_set_dt(&led, 0);
+
 	pkt = net_pkt_alloc_with_buffer(NULL, 100, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt)
 		LOG_ERR("Failed to allocate net_pkt");
 
+	gpio_pin_set_dt(&led, 1);
 	buf = net_buf_frag_last(pkt->buffer);
 
 	int bytes_to_send = argc - 1;
@@ -145,6 +163,8 @@ SHELL_CMD_REGISTER(adf702x, &adf702x_cmds, "ADF702x commands", NULL);
 
 int main(void)
 {
+	init_led();
+
 	/* Initialize ieee802154 device */
 	if (init_ieee802154()) {
 		LOG_ERR("Unable to initialize ieee802154");
