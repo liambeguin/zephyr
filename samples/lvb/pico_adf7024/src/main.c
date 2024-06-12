@@ -115,15 +115,10 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 
 	buf = net_buf_frag_last(pkt->buffer);
 
-	uint8_t data[] = "This is a test\0";
-	net_pkt_write(pkt, data, strlen(data));
-	net_pkt_write(pkt, data, strlen(data));
-	net_pkt_write(pkt, data, strlen(data));
-	net_pkt_write(pkt, data, strlen(data));
-	net_pkt_write(pkt, data, strlen(data));
-	net_pkt_write(pkt, data, strlen(data));
-	net_pkt_write(pkt, data, strlen(data));
-	net_pkt_write_u8(pkt, 0x18);
+	int bytes_to_send = argc - 1;
+	for (int i = 0; i < bytes_to_send; i++) {
+		net_pkt_write_u8(pkt, strtol(argv[1 + i], NULL, 16));
+	}
 
 	/* Transmit data through radio */
 	ret = tx_api->tx(tx_dev, IEEE802154_TX_MODE_DIRECT, pkt, buf);
@@ -143,7 +138,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(get, NULL, "read register\n", cmd_adf702x_get, 2, 0),
 	SHELL_CMD_ARG(dump, NULL, "dump register\n", cmd_adf702x_dump, 0, 0),
 	SHELL_CMD_ARG(rx, NULL, "rx\n", cmd_adf702x_rx, 1, 0),
-	SHELL_CMD_ARG(tx, NULL, "tx\n", cmd_adf702x_tx, 1, 0),
+	SHELL_CMD_ARG(tx, NULL, "tx\n", cmd_adf702x_tx, 1, 20),
 	SHELL_SUBCMD_SET_END
 );
 SHELL_CMD_REGISTER(adf702x, &adf702x_cmds, "ADF702x commands", NULL);
