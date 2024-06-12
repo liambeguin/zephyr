@@ -8,6 +8,7 @@
 	chosen {
 		led0 = &led0;
 
+		zephyr,ieee802154 = &adf7024_tx;
 		zephyr,ieee802154_tx = &adf7024_tx;
 		zephyr,ieee802154_rx = &adf7024_rx;
 	};

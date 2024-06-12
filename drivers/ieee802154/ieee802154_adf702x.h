@@ -90,6 +90,11 @@ struct adf702x_context {
 	K_KERNEL_STACK_MEMBER(trx_stack,
 			      CONFIG_IEEE802154_ADF702X_RX_STACK_SIZE);
 
+	/* PHY specific driver attributes */
+	enum ieee802154_phy_channel_page cc_page;
+	struct ieee802154_phy_channel_range cc_range;
+	struct ieee802154_phy_supported_channels cc_channels;
+
 	struct k_sem isr_lock;
 	struct k_sem tx_wait;
 };

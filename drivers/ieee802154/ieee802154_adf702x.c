@@ -332,6 +332,24 @@ static int adf702x_cca(const struct device *dev)
 }
 #endif
 
+static int adf702x_set_channel(const struct device *dev, uint16_t channel)
+{
+	const struct adf702x_config *conf = dev->config;
+
+	LOG_INST_ERR(conf->log, "%s: channel=%d", __func__, channel);
+
+	return -EALREADY;
+}
+
+static int adf702x_set_txpower(const struct device *dev, int16_t dBm)
+{
+	const struct adf702x_config *conf = dev->config;
+
+	LOG_INST_ERR(conf->log, "%s: dBm=%d", __func__, dBm);
+
+	return adf702x_regs_set_pa_level(dev, dBm);
+}
+
 static int adf702x_tx(const struct device *dev,
 		      enum ieee802154_tx_mode mode,
 		      struct net_pkt *pkt,
@@ -411,14 +429,37 @@ static int adf702x_stop(const struct device *dev)
 	return 0;
 }
 
+int adf702x_configure(const struct device *dev,
+		      enum ieee802154_config_type type,
+		      const struct ieee802154_config *config)
+{
+	const struct adf702x_config *conf = dev->config;
+	int ret = -EINVAL;
+
+	LOG_INST_DBG(conf->log, "Configure %d", type);
+
+	switch (type) {
+	case IEEE802154_CONFIG_AUTO_ACK_FPB:
+	case IEEE802154_CONFIG_ACK_FPB:
+	case IEEE802154_CONFIG_PAN_COORDINATOR:
+	case IEEE802154_CONFIG_PROMISCUOUS:
+	case IEEE802154_CONFIG_EVENT_HANDLER:
+	default:
+		break;
+	}
+
+	return ret;
+}
 // dummy always return suppored_ch pages
 static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 			    struct ieee802154_attr_value *value)
 {
 	const struct adf702x_config *conf = dev->config;
-	/* struct adf702x_context *ctx = dev->data; */
+	struct adf702x_context *ctx = dev->data;
 	uint8_t bram[64] = {0};
 
+#if CONFIG_IEEE802154_RAW_MODE
+	// in RAW_MODE we kinda hijack this feature
 	switch (attr) {
 	case 0:
 		adf702x_get_status(dev);
@@ -440,6 +481,22 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 	}
 
 	return 0;
+#else
+	LOG_INST_DBG(conf->log, "attr_get %d", attr);
+
+	// Dummy stuff
+	switch (attr) {
+	case IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES:
+		value->phy_supported_channel_pages = ctx->cc_page;
+		return 0;
+
+	case IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES:
+		value->phy_supported_channels = &ctx->cc_channels;
+		return 0;
+	default:
+		return -ENOENT;
+	}
+#endif
 }
 
 static int adf702x_cw(const struct device *dev)
@@ -462,12 +519,12 @@ static const struct ieee802154_radio_api adf702x_radio_api = {
 	.iface_api.init		= adf702x_iface_init,
 	.get_capabilities	= adf702x_get_capabilities,
 	/* .cca			= adf702x_cca, */
-	/* .set_channel		= adf702x_set_channel, */
-	/* .set_txpower		= adf702x_set_txpower, */
+	.set_channel		= adf702x_set_channel,
+	.set_txpower		= adf702x_set_txpower,
 	.tx			= adf702x_tx,
 	.start			= adf702x_start,
 	.stop			= adf702x_stop,
-	/* .configure		= adf702x_configure, */
+	.configure		= adf702x_configure,
 	.attr_get		= adf702x_attr_get,
 	.continuous_carrier	= adf702x_cw,
 };
@@ -665,9 +722,25 @@ static int adf702x_init(const struct device *dev)
 		CONFIG_IEEE802154_ADF702X_INIT_PRIO,			\
 		&adf702x_radio_api)
 
+#define IEEE802154_ADF702X_NET_DEVICE_INIT(n)				\
+	NET_DEVICE_DT_INST_DEFINE(					\
+		n,							\
+		&adf702x_init,						\
+		NULL,							\
+		&adf702x_ctx_data_##n,					\
+		&adf702x_ctx_config_##n,				\
+		CONFIG_IEEE802154_ADF702X_INIT_PRIO,			\
+		&adf702x_radio_api,					\
+		IEEE802154_L2,						\
+		NET_L2_GET_CTX_TYPE(IEEE802154_L2),			\
+		125)
+
 #define IEEE802154_ADF702X_INIT(inst)					\
 	IEEE802154_ADF702X_DEVICE_CONFIG(inst);				\
 	IEEE802154_ADF702X_DEVICE_DATA(inst);				\
-	IEEE802154_ADF702X_RAW_DEVICE_INIT(inst);
+									\
+	COND_CODE_1(CONFIG_IEEE802154_RAW_MODE,				\
+		    (IEEE802154_ADF702X_RAW_DEVICE_INIT(inst);),	\
+		    (IEEE802154_ADF702X_NET_DEVICE_INIT(inst);))
 
 DT_INST_FOREACH_STATUS_OKAY(IEEE802154_ADF702X_INIT)

@@ -120,17 +120,15 @@ static int cmd_adf702x_rx(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 {
+	int ret = 0;
+#if CONFIG_IEEE802154_RAW_MODE
 	struct net_pkt *pkt;
 	struct net_buf *buf;
-	int ret = 0;
-
-	gpio_pin_set_dt(&led, 0);
 
 	pkt = net_pkt_alloc_with_buffer(NULL, 100, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt)
 		LOG_ERR("Failed to allocate net_pkt");
 
-	gpio_pin_set_dt(&led, 1);
 	buf = net_buf_frag_last(pkt->buffer);
 
 	int bytes_to_send = argc - 1;
@@ -145,6 +143,7 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	net_pkt_unref(pkt);
+#endif
 
 	return 0;
 }
@@ -165,11 +164,13 @@ int main(void)
 {
 	init_led();
 
+#if CONFIG_IEEE802154_RAW_MODE
 	/* Initialize ieee802154 device */
 	if (init_ieee802154()) {
 		LOG_ERR("Unable to initialize ieee802154");
 		return 0;
 	}
+#endif
 
 	return 0;
 }
