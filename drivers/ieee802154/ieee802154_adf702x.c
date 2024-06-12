@@ -514,6 +514,7 @@ static void adf702x_thread_main(void *p1, void *p2, void *p3)
 	const struct device *dev = ctx->dev;
 	const struct adf702x_config *conf = dev->config;
 	uint8_t isr_status[2] = {0};
+	uint8_t isr_update[2] = {0};
 	int ret;
 
 	while (true) {
@@ -522,22 +523,22 @@ static void adf702x_thread_main(void *p1, void *p2, void *p3)
 		LOG_INST_INF(conf->log, "got IRQ 0x%x 0x%x", isr_status[0], isr_status[1]);
 
 		if (isr_status[0] & ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_CRC_CORRECT) {
-			isr_status[0] &= ~ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_CRC_CORRECT;
+			isr_update[0] |= ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_CRC_CORRECT;
 			adf702x_process_rx_frame(dev);
 		}
 
 		if (isr_status[0] & ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_TX_EOF) {
-			isr_status[0] &= ~ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_TX_EOF;
+			isr_update[0] |= ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_TX_EOF;
 			adf702x_process_tx_frame(dev);
 		}
 
-		if (isr_status[0] & ctx->conf_regs.interrupt_mask0)
+		if (ctx->conf_regs.interrupt_mask0 & !isr_update[0])
 			LOG_INST_WRN(conf->log, "Unhandled IRQ0: 0x%02x", isr_status[0]);
-		if (isr_status[1] & ctx->conf_regs.interrupt_mask1)
+		if (ctx->conf_regs.interrupt_mask1 & !isr_update[1])
 			LOG_INST_WRN(conf->log, "Unhandled IRQ1: 0x%02x", isr_status[1]);
 
 		// clear processed irq
-		ret = adf702x_ram_write(dev, ADF702X_REG_INTERRUPT_SOURCE_0, 2, isr_status);
+		ret = adf702x_ram_write(dev, ADF702X_REG_INTERRUPT_SOURCE_0, 2, isr_update);
 	}
 }
 
