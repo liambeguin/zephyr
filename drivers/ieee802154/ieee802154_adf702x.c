@@ -458,7 +458,6 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 			    struct ieee802154_attr_value *value)
 {
 	const struct adf702x_config *conf = dev->config;
-	struct adf702x_context *ctx = dev->data;
 	uint8_t bram[64] = {0};
 
 #if CONFIG_IEEE802154_RAW_MODE
@@ -485,9 +484,11 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 
 	return 0;
 #else
-	LOG_INST_DBG(conf->log, "attr_get %d", attr);
+	struct adf702x_context *ctx = dev->data;
 
 	// Dummy stuff
+	LOG_INST_DBG(conf->log, "attr_get %d", attr);
+
 	switch (attr) {
 	case IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES:
 		value->phy_supported_channel_pages = ctx->cc_page;
