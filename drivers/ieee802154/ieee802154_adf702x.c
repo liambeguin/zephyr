@@ -259,8 +259,11 @@ static int adf702x_packet_write(const struct device *dev, uint8_t *data, uint8_t
 
 static int adf702x_regs_set_channel_freq(const struct device *dev, uint32_t freq)
 {
+	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 	uint32_t ch_freq = (uint32_t)(((float)freq / 26000000) * 65535);
+
+	LOG_INST_INF(conf->log, "Setting channel frequency to %d Hz", freq);
 
 	ctx->conf_regs.channel_freq0 = FIELD_GET(0x0000FF, ch_freq);
 	ctx->conf_regs.channel_freq1 = FIELD_GET(0x00FF00, ch_freq);
