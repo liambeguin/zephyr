@@ -590,6 +590,8 @@ static void adf702x_thread_main(void *p1, void *p2, void *p3)
 
 		// clear processed irq
 		ret = adf702x_ram_write(dev, ADF702X_REG_INTERRUPT_SOURCE_0, 2, isr_update);
+		// go back to waiting for packets
+		adf702x_set_fw_state(dev, FW_STATE_PHY_RX);
 	}
 }
 
