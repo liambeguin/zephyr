@@ -41,6 +41,8 @@ static int init_led(void)
 
 static bool init_ieee802154(void)
 {
+	struct ieee802154_attr_value val;
+
 	/* Initialize ieee802154 device */
 	LOG_INF("Initialize ieee802.15.4 devices");
 
@@ -51,6 +53,9 @@ static bool init_ieee802154(void)
 
 	rx_api = (struct ieee802154_radio_api *)rx_dev->api;
 	rx_api->start(rx_dev);
+
+	// automatically set to RX mode
+	rx_api->attr_get(rx_dev, 3, &val);
 
 	if (!device_is_ready(tx_dev)) {
 		LOG_ERR("IEEE 802.15.4 tx device not ready");
