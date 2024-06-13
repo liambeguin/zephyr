@@ -547,7 +547,7 @@ static inline void adf702x_irq_handler(const struct device *port,
 
 static void adf702x_process_rx_frame(const struct device *dev)
 {
-	adf702x_packet_read(dev, "RX");
+	adf702x_packet_read(dev, "\e[1;31mRX\e[0m");
 }
 
 static void adf702x_process_tx_frame(const struct device *dev)
