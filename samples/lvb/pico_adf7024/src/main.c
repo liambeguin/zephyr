@@ -110,7 +110,10 @@ static int cmd_adf702x_get(const struct shell *sh, size_t argc, char **argv)
 static int cmd_adf702x_dump(const struct shell *sh, size_t argc, char **argv)
 {
 	struct ieee802154_attr_value val;
+
 	tx_api->attr_get(tx_dev, 2, &val);
+	rx_api->attr_get(rx_dev, 2, &val);
+
 	return 0;
 }
 
