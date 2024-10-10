@@ -128,10 +128,10 @@ static int cmd_adf702x_rx(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 {
-	int ret = 0;
 #if CONFIG_IEEE802154_RAW_MODE
 	struct net_pkt *pkt;
 	struct net_buf *buf;
+	int ret = 0;
 
 	pkt = net_pkt_alloc_with_buffer(NULL, 100, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt)
@@ -140,6 +140,11 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 	buf = net_buf_frag_last(pkt->buffer);
 
 	int bytes_to_send = argc - 1;
+	if (bytes_to_send > 100) {
+		LOG_ERR("can't send that much data...");
+		goto out;
+	}
+
 	for (int i = 0; i < bytes_to_send; i++) {
 		net_pkt_write_u8(pkt, strtol(argv[1 + i], NULL, 16));
 	}
@@ -150,29 +155,94 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 		LOG_ERR("Error transmit data: %d", ret);
 	}
 
+out:
 	net_pkt_unref(pkt);
+#else
+	LOG_ERR("tx disabled, use iface");
 #endif
 
 	return 0;
 }
 
+#define TEST_PAYLOAD "TEST PAYLOAD"
+static int cmd_adf702x_iface(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret;
+	struct net_pkt *tx_pkt;
+	struct net_if *iface = net_if_get_first_by_type(
+			&NET_L2_GET_NAME(DUMMY));
+
+	/* zassert_not_null(net_if_l2(iface), "No L2 found"); */
+	if (!net_if_l2(iface))
+		LOG_ERR("No L2 found");
+
+	/* zassert_not_null(net_if_l2(iface)->send, "No send() found"); */
+	if (!net_if_l2(iface)->send)
+		LOG_ERR("No send() found");
+
+	tx_pkt = net_pkt_alloc_with_buffer(iface, 1,
+			AF_UNSPEC, 0, K_NO_WAIT);
+	/* zassert_not_null(tx_pkt, "Failed to allocate packet"); */
+	if (!tx_pkt)
+		LOG_ERR("failed to allocate packet");
+
+	ret = net_pkt_write(tx_pkt, TEST_PAYLOAD, sizeof(TEST_PAYLOAD));
+	/* zassert_equal(0, ret, "Failed to write payload"); */
+	if (!ret)
+		LOG_ERR("Failed to write payload");
+
+	ret = net_send_data(tx_pkt);
+	/* zassert_equal(0, ret, "Failed to process TX packet"); */
+	if (!ret)
+		LOG_ERR("Failed to process TX packet");
+	/* zassert_equal(tx_pkt, test_data.tx_pkt, "TX packet did not reach L2"); */
+
+	net_pkt_unref(tx_pkt);
+
+#if 0
+	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	struct net_pkt *tx_pkt;
+	int ret = 0;
+
+	LOG_ERR("lvb in %p", iface);
+	tx_pkt = net_pkt_alloc_with_buffer(iface, sizeof(TEST_PAYLOAD), AF_UNSPEC, 0, K_NO_WAIT);
+	LOG_ERR("lvb in %p", tx_pkt);
+
+	LOG_ERR("lvb before net_pkt_write");
+	ret = net_pkt_write(tx_pkt, TEST_PAYLOAD, sizeof(TEST_PAYLOAD));
+	LOG_ERR("lvb ret %d", ret);
+
+	ret = net_send_data(tx_pkt);
+	LOG_ERR("lvb ret %d", ret);
+	net_pkt_unref(tx_pkt);
+#endif
+
+	return ret;
+}
+
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	adf702x_cmds,
 	SHELL_CMD_ARG(cw, NULL, "control continuous carrier mode\n", cmd_adf702x_cw, 2, 0),
 	SHELL_CMD_ARG(status, NULL, "read status\n", cmd_adf702x_status, 0, 0),
-	SHELL_CMD_ARG(get, NULL, "read register\n", cmd_adf702x_get, 2, 0),
-	SHELL_CMD_ARG(dump, NULL, "dump register\n", cmd_adf702x_dump, 0, 0),
-	SHELL_CMD_ARG(rx, NULL, "rx\n", cmd_adf702x_rx, 1, 0),
-	SHELL_CMD_ARG(tx, NULL, "tx\n", cmd_adf702x_tx, 1, 20),
+	/* SHELL_CMD_ARG(get, NULL, "read register\n", cmd_adf702x_get, 2, 0), */
+	/* SHELL_CMD_ARG(dump, NULL, "dump register\n", cmd_adf702x_dump, 0, 0), */
+	/* SHELL_CMD_ARG(rx, NULL, "rx\n", cmd_adf702x_rx, 1, 0), */
+	/* SHELL_CMD_ARG(tx, NULL, "tx\n", cmd_adf702x_tx, 1, 20), */
+	SHELL_CMD_ARG(iface, NULL, "iface\n", cmd_adf702x_iface, 0, 0),
 	SHELL_SUBCMD_SET_END
 );
 SHELL_CMD_REGISTER(adf702x, &adf702x_cmds, "ADF702x commands", NULL);
 
 int main(void)
 {
+	/* struct net_if *iface; */
+	/* iface = net_if_get_by_index(1); */
+
 	init_led();
 
 #if CONFIG_IEEE802154_RAW_MODE
+
 	/* Initialize ieee802154 device */
 	if (init_ieee802154()) {
 		LOG_ERR("Unable to initialize ieee802154");
