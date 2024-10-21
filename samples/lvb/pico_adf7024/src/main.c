@@ -11,7 +11,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/uart.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/ieee802154_radio.h>
 
 #include <zephyr/logging/log.h>
