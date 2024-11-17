@@ -224,12 +224,15 @@ static int cmd_adf702x_iface(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	adf702x_cmds,
 	SHELL_CMD_ARG(cw, NULL, "control continuous carrier mode\n", cmd_adf702x_cw, 2, 0),
+#if CONFIG_IEEE802154_RAW_MODE
+	SHELL_CMD_ARG(get, NULL, "read register\n", cmd_adf702x_get, 2, 0),
+	SHELL_CMD_ARG(dump, NULL, "dump register\n", cmd_adf702x_dump, 0, 0),
+	SHELL_CMD_ARG(rx, NULL, "rx\n", cmd_adf702x_rx, 1, 0),
+	SHELL_CMD_ARG(tx, NULL, "tx\n", cmd_adf702x_tx, 1, 20),
+#else
 	SHELL_CMD_ARG(status, NULL, "read status\n", cmd_adf702x_status, 0, 0),
-	/* SHELL_CMD_ARG(get, NULL, "read register\n", cmd_adf702x_get, 2, 0), */
-	/* SHELL_CMD_ARG(dump, NULL, "dump register\n", cmd_adf702x_dump, 0, 0), */
-	/* SHELL_CMD_ARG(rx, NULL, "rx\n", cmd_adf702x_rx, 1, 0), */
-	/* SHELL_CMD_ARG(tx, NULL, "tx\n", cmd_adf702x_tx, 1, 20), */
 	SHELL_CMD_ARG(iface, NULL, "iface\n", cmd_adf702x_iface, 0, 0),
+#endif
 	SHELL_SUBCMD_SET_END
 );
 SHELL_CMD_REGISTER(adf702x, &adf702x_cmds, "ADF702x commands", NULL);
@@ -238,6 +241,8 @@ int main(void)
 {
 	/* struct net_if *iface; */
 	/* iface = net_if_get_by_index(1); */
+
+	LOG_DBG("TEST");
 
 	init_led();
 
