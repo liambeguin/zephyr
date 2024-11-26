@@ -9,6 +9,11 @@
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_ADF702X_H_
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_ADF702X_H_
 
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+
+#include "ieee802154_adf702x_regs.h"
+
 /* Status Word */
 #define STATUS_SPI_READY		BIT(7)
 #define STATUS_IRQ_STATUS		BIT(6)
@@ -75,6 +80,178 @@ struct adf702x_config {
 /* Runtime context structure
  ***************************
  */
+
+struct adf702x_conf_regs {
+	uint8_t interrupt_mask0;			// 0x100
+	uint8_t interrupt_mask1;			// 0x101
+	uint8_t number_of_wakeups0;			// 0x102
+	uint8_t number_of_wakeups1;			// 0x103
+	uint8_t number_of_wakeups_irq_threshold0;	// 0x104
+	uint8_t number_of_wakeups_irq_threshold1;	// 0x105
+	uint8_t rx_dwell_time;				// 0x106
+	uint8_t parmtime_divider;			// 0x107
+	uint8_t swm_rssi_thresh;			// 0x108
+	uint8_t channel_freq0;				// 0x109
+	uint8_t channel_freq1;				// 0x10A
+	uint8_t channel_freq2;				// 0x10B
+	union {						// 0x10C
+		uint8_t radio_cfg0;
+		uint8_t radio_profile_0;
+	};
+	union {						// 0x10D
+		uint8_t radio_cfg1;
+		uint8_t radio_profile_1;
+	};
+	union {						// 0x10E
+		uint8_t radio_cfg2;
+		uint8_t radio_profile_2;
+	};
+	union {						// 0x10F
+		uint8_t radio_cfg3;
+		uint8_t radio_profile_3;
+	};
+	union {						// 0x110
+		uint8_t radio_cfg4;
+		uint8_t radio_profile_4;
+	};
+	union {						// 0x111
+		uint8_t radio_cfg5;
+		uint8_t radio_profile_5;
+	};
+	union {						// 0x112
+		uint8_t radio_cfg6;
+		uint8_t radio_profile_6;
+	};
+	union {						// 0x113
+		uint8_t radio_cfg7;
+		uint8_t radio_agc_mode;
+	};
+	union {						// 0x114
+		uint8_t radio_cfg8;
+		uint8_t radio_pa_ramp;
+	};
+	union {						// 0x115
+		uint8_t radio_cfg9;
+		uint8_t radio_profile_7;
+	};
+	union {						// 0x116
+		uint8_t radio_cfg10;
+		uint8_t radio_afc_mode;
+	};
+	union {						// 0x117
+		uint8_t radio_cfg11;
+		uint8_t radio_profile_8;
+	};
+	uint8_t image_reject_cal_phase;			// 0x118
+	uint8_t image_reject_cal_amplitude;		// 0x119
+	uint8_t mode_control;				// 0x11A
+	uint8_t preamble_match;				// 0x11B
+	uint8_t symbol_mode;				// 0x11C
+	uint8_t preamble_len;				// 0x11D
+	uint8_t crc_poly0;				// 0x11E
+	uint8_t crc_poly1;				// 0x11F
+	uint8_t sync_control;				// 0x120
+	uint8_t sync_byte0;				// 0x121
+	uint8_t sync_byte1;				// 0x122
+	uint8_t sync_byte2;				// 0x123
+	uint8_t tx_base_adr;				// 0x124
+	uint8_t rx_base_adr;				// 0x125
+	uint8_t packet_length_control;			// 0x126
+	uint8_t packet_length_max;			// 0x127
+	union {						// 0x128
+		uint8_t static_reg_fix;
+		uint8_t radio_profile_9;
+	};
+	union {						// 0x129
+		uint8_t address_match_offset;
+		uint8_t reserved0;
+	};
+	union {						// 0x12A
+		uint8_t address_length;
+		uint8_t reserved1;
+	};
+	union {						// 0x12B
+		uint8_t address_filtering0;
+		uint8_t radio_profile_10;
+	};
+	union {						// 0x12C
+		uint8_t address_filtering1;
+		uint8_t radio_profile_11;
+	};
+	union {						// 0x12D
+		uint8_t address_filtering2;
+		uint8_t radio_profile_12;
+	};
+	union {						// 0x12E
+		uint8_t address_filtering3;
+		uint8_t radio_pa_level;
+	};
+	union {						// 0x12F
+		uint8_t address_filtering4;
+		uint8_t radio_profile_13;
+	};
+	union {						// 0x130
+		uint8_t address_filtering5;
+		uint8_t radio_profile_14;
+	};
+	union {						// 0x131
+		uint8_t address_filtering6;
+		uint8_t radio_profile_15;
+	};
+	union {						// 0x132
+		uint8_t address_filtering7;
+		uint8_t radio_profile_16;
+	};
+	union {						// 0x133
+		uint8_t address_filtering8;
+		uint8_t radio_profile_17;
+	};
+	union {						// 0x134
+		uint8_t address_filtering9;
+		uint8_t radio_profile_18;
+	};
+	union {						// 0x135
+		uint8_t address_filtering10;
+		uint8_t radio_profile_19;
+	};
+	union {						// 0x136
+		uint8_t address_filtering11;
+		uint8_t radio_profile_20;
+	};
+	union {						// 0x137
+		uint8_t address_filtering12;
+		uint8_t radio_profile_21;
+	};
+	union {						// 0x138
+		uint8_t rssi_wait_time;
+		uint8_t radio_profile_22;
+	};
+	uint8_t testmodes;				// 0x139
+	union {						// 0x13A
+		uint8_t transition_clock_div;
+		uint8_t reserved2;
+	};
+	uint8_t reserved3;				// 0x13B
+	uint8_t reserved4;				// 0x13C
+	uint8_t reserved5;				// 0x13D
+	union {						// 0x13E
+		uint8_t rx_synth_lock_time;
+		uint8_t reserved6;
+	};
+	union {						// 0x13F
+		uint8_t tx_synth_lock_time;
+		uint8_t reserved7;
+	};
+};
+
+enum adf7024_profile {
+	PROFILE_A = 0,
+	PROFILE_B = 1,
+	PROFILE_C = 2,
+	PROFILE_D = 3,
+	PROFILE_E = 4,
+	PROFILE_F = 5,
+};
 
 struct adf702x_context {
 	const struct device *dev;
