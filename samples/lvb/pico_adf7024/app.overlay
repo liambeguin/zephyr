@@ -24,7 +24,7 @@
 		   <&gpio0 22 GPIO_ACTIVE_LOW>,
 		   <&gpio0 26 GPIO_ACTIVE_LOW>;
 
-	adf7024_tx_400: ieee802144@0 {
+	adf7024_tx_400: ieee802154@0 {
 		status = "okay";
 		compatible = "adi,adf702x";
 		reg = <0>;
@@ -35,7 +35,7 @@
 		irq-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 	};
 
-	adf7024_rx_800: ieee802144@1 {
+	adf7024_rx_800: ieee802154@1 {
 		status = "okay";
 		compatible = "adi,adf702x";
 		reg = <1>;
@@ -46,7 +46,7 @@
 		irq-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 	};
 
-	adf7024_tx_800: ieee802144@2 {
+	adf7024_tx_800: ieee802154@2 {
 		status = "okay";
 		compatible = "adi,adf702x";
 		reg = <2>;
