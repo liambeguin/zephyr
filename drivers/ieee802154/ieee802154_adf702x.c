@@ -599,6 +599,10 @@ static int adf702x_start(const struct device *dev)
 	if (ret)
 		return ret;
 
+	ret = adf702x_set_fw_state(dev, FW_STATE_PHY_RX);
+	if (ret)
+		return ret;
+
 	ctx->is_up = true;
 	return 0;
 }
