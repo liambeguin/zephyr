@@ -12,6 +12,25 @@
 	};
 };
 
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_P8>, <I2C0_SCL_P9>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+};
+
+&pico_i2c0 {
+	tca9555@27 {
+		compatible = "nxp,pca95xx";
+		reg = <0x27>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};
+
 &pico_spi {
 	status = "okay";
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>,
