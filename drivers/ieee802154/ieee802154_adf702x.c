@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/net/dummy.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 
@@ -252,7 +253,7 @@ static int adf702x_packet_write(const struct device *dev, uint8_t *data, uint8_t
 	if (ret)
 		return ret;
 
-	adf702x_packet_read(dev, "TX");
+	/* adf702x_packet_read(dev, "TX"); */
 
 	return 0;
 }
@@ -292,7 +293,8 @@ static void adf702x_iface_init(struct net_if *iface)
 
 	ctx->iface = iface;
 
-	ieee802154_init(iface);
+	/* net_ppp_init(iface); */
+	/* ieee802154_init(iface); */
 }
 
 static enum ieee802154_hw_caps adf702x_get_capabilities(const struct device *dev)
@@ -341,7 +343,8 @@ static int adf702x_set_channel(const struct device *dev, uint16_t channel)
 
 	LOG_INST_ERR(conf->log, "%s: channel=%d", __func__, channel);
 
-	return -EALREADY;
+	/* return -EALREADY; */
+	return 0;
 }
 
 static int adf702x_set_txpower(const struct device *dev, int16_t dBm)
@@ -361,6 +364,8 @@ static int adf702x_tx(const struct device *dev,
 	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 	int ret;
+
+	LOG_INST_ERR(conf->log, "%s: entering", __func__);
 
 	if (!ctx->is_up)
 		return -ENETDOWN;
@@ -523,7 +528,7 @@ static const struct ieee802154_radio_api adf702x_radio_api = {
 	.iface_api.init		= adf702x_iface_init,
 	.get_capabilities	= adf702x_get_capabilities,
 	/* .cca			= adf702x_cca, */
-	.set_channel		= adf702x_set_channel,
+	/* .set_channel		= adf702x_set_channel, */
 	.set_txpower		= adf702x_set_txpower,
 	.tx			= adf702x_tx,
 	.start			= adf702x_start,
@@ -737,9 +742,11 @@ static int adf702x_init(const struct device *dev)
 		&adf702x_ctx_config_##n,				\
 		CONFIG_IEEE802154_ADF702X_INIT_PRIO,			\
 		&adf702x_radio_api,					\
-		IEEE802154_L2,						\
-		NET_L2_GET_CTX_TYPE(IEEE802154_L2),			\
-		125)
+		DUMMY_L2,						\
+		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
+
+		/* PPP_L2, NET_L2_GET_CTX_TYPE(PPP_L2), 125); */
+		/* IEEE802154_L2, NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125)  */
 
 #define IEEE802154_ADF702X_INIT(inst)					\
 	IEEE802154_ADF702X_DEVICE_CONFIG(inst);				\
@@ -748,5 +755,6 @@ static int adf702x_init(const struct device *dev)
 	COND_CODE_1(CONFIG_IEEE802154_RAW_MODE,				\
 		    (IEEE802154_ADF702X_RAW_DEVICE_INIT(inst);),	\
 		    (IEEE802154_ADF702X_NET_DEVICE_INIT(inst);))
+	/* IEEE802154_ADF702X_RAW_DEVICE_INIT(inst); */
 
 DT_INST_FOREACH_STATUS_OKAY(IEEE802154_ADF702X_INIT)
