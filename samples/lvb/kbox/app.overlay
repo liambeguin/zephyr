@@ -22,6 +22,47 @@
 	};
 };
 
+&gpio0 {
+	ngpios = <28>;
+	gpio-reserved-ranges =
+		<0 2>,
+		<3 3>,
+		<8 6>,
+		<16 4>,
+		<22 6>;
+
+	gpio-line-names =
+		"GP0",
+		"GP1",
+		"24v-disable",
+		"GP3",
+		"GP4",
+		"GP5",
+		"batt1-inhibit",
+		"batt2-inhibit",
+		"GP8",
+		"GP9",
+		"GP10",
+		"GP11",
+		"GP12",
+		"GP13",
+		"rx-enable",
+		"tx-enable",
+		"GP16",
+		"GP17",
+		"GP18",
+		"GP19",
+		"low-battery",
+		"GP21",
+		"GP22",
+		"GP23",
+		"GP24",
+		"GP25",
+		"GP26",
+		"GP27",
+		"err-status";
+};
+
 &pico_i2c0 {
 	tca9555@27 {
 		compatible = "nxp,pca95xx";
