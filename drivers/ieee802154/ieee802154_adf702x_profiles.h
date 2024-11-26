@@ -1,4 +1,6 @@
-#if 1
+#ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_ADF702X_PROFILES_H_
+#define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_ADF702X_PROFILES_H_
+
 enum adf7024_profile {
 	PROFILE_A = 0,
 	PROFILE_B = 1,
@@ -76,4 +78,4 @@ static int adf7024_regs_set_profile(const struct device *dev, enum adf7024_profi
 
 	return 0;
 };
-#endif
+#endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_ADF702X_PROFILES_H_ */
