@@ -867,7 +867,7 @@ static int adf702x_init(const struct device *dev)
 	ctx->conf_regs = adf702x_default_conf_regs;
 	adf702x_regs_set_channel_freq(dev, conf->channel_frequency);
 	adf702x_regs_set_pa_level(dev, 13.5);
-	adf7024_regs_set_profile(dev, PROFILE_A);
+	adf7024_regs_set_profile(dev, conf->radio_profile);
 
 	adf702x_ram_write(dev, 0x100, 64, (uint8_t *)&ctx->conf_regs);
 	adf702x_set_command(dev, CMD_CONFIG_DEV);
@@ -903,6 +903,8 @@ static int adf702x_init(const struct device *dev)
 		.channel_frequency = DT_PROP_OR(DT_DRV_INST(n),		\
 						channel_frequency,	\
 						869000000),		\
+		.radio_profile = DT_INST_PROP_OR(n, adf7024_radio_profile,	\
+						PROFILE_A),		\
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, n)		\
 	}
 

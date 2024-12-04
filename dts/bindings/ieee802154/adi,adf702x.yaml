@@ -16,3 +16,9 @@ properties:
     default: 896000000
     description: |
       Default channel frequency to use for the transceiver.
+
+  adf7024,radio-profile:
+    type: int
+    default: 0
+    description: |
+      Default radio profile for the ADF7024

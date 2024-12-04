@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/dt-bindings/ieee802154/ieee802154_adf702x.h>
 
 / {
 	chosen {
@@ -31,6 +32,7 @@
 		spi-max-frequency = <1000000>;
 
 		channel-frequency = <432100000>;
+		adf7024,radio-profile = <RADIO_PROFILE_B>;
 
 		irq-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 	};

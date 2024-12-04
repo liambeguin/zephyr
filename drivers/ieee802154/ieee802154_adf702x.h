@@ -72,6 +72,7 @@ struct adf702x_config {
 	const char *name;
 
 	uint32_t channel_frequency;
+	uint8_t radio_profile;
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 	uint8_t inst;
