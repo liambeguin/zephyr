@@ -12,6 +12,8 @@
 		zephyr,ieee802154 = &adf7024_tx_800;
 		zephyr,ieee802154_tx = &adf7024_tx_800;
 		zephyr,ieee802154_rx = &adf7024_rx_800;
+
+		zephyr,ieee802154_tx_ttc = &adf7024_tx_400;
 	};
 };
 

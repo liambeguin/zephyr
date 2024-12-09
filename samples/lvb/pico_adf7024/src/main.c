@@ -23,6 +23,8 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 /* ieee802.15.4 devices */
 static const struct device *const rx_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154_rx));
 static const struct device *const tx_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154_tx));
+static const struct device *const tx_ttc_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154_tx_ttc));
+
 
 static int init_led(void)
 {
@@ -38,11 +40,10 @@ static int init_led(void)
 
 static bool init_ieee802154(void)
 {
-	struct ieee802154_radio_api *tx_api, *rx_api;
+	struct ieee802154_radio_api *tx_api, *rx_api, *ttc_api;
 
-	/* Initialize ieee802154 device */
-	LOG_INF("Initialize ieee802.15.4 devices");
-
+	/* LOG_INF("Initialize ieee802.15.4 devices"); */
+	/* *** */
 	if (!device_is_ready(rx_dev)) {
 		LOG_ERR("IEEE 802.15.4 rx device not ready");
 		return -EIO;
@@ -51,6 +52,7 @@ static bool init_ieee802154(void)
 	rx_api = (struct ieee802154_radio_api *)rx_dev->api;
 	rx_api->start(rx_dev);
 
+	/* *** */
 	if (!device_is_ready(tx_dev)) {
 		LOG_ERR("IEEE 802.15.4 tx device not ready");
 		return -EIO;
@@ -58,6 +60,15 @@ static bool init_ieee802154(void)
 
 	tx_api = (struct ieee802154_radio_api *)tx_dev->api;
 	tx_api->start(tx_dev);
+
+	/* *** */
+	if (!device_is_ready(tx_ttc_dev)) {
+		LOG_ERR("IEEE 802.15.4 tx device not ready");
+		return -EIO;
+	}
+
+	ttc_api = (struct ieee802154_radio_api *)tx_ttc_dev->api;
+	ttc_api->start(tx_ttc_dev);
 
 	return 0;
 }
