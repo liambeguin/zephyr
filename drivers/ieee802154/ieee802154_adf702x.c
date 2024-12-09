@@ -519,7 +519,6 @@ static int adf702x_cca(const struct device *dev)
 
 	return ret;
 }
-#endif
 
 static int adf702x_set_channel(const struct device *dev, uint16_t channel)
 {
@@ -530,6 +529,7 @@ static int adf702x_set_channel(const struct device *dev, uint16_t channel)
 	/* return -EALREADY; */
 	return 0;
 }
+#endif
 
 static int adf702x_set_txpower(const struct device *dev, int16_t dBm)
 {
