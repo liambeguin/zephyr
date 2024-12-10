@@ -21,9 +21,9 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
 /* ieee802.15.4 devices */
-static const struct device *const rx_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154_rx));
-static const struct device *const tx_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154_tx));
-static const struct device *const tx_ttc_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154_tx_ttc));
+static const struct device *const rx_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_ieee802154_rx));
+static const struct device *const tx_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_ieee802154_tx));
+static const struct device *const tx_ttc_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_ieee802154_tx_ttc));
 
 
 static int init_led(void)
@@ -38,39 +38,37 @@ static int init_led(void)
 	return gpio_pin_configure_dt(&led, flags);
 }
 
-static bool init_ieee802154(void)
+static int init_ieee802154(void)
 {
-	struct ieee802154_radio_api *tx_api, *rx_api, *ttc_api;
+	struct ieee802154_radio_api *api;
+	const struct device *devlist[] = {
+		rx_dev,
+		tx_dev,
+		tx_ttc_dev,
+	};
+	int ret = 0;
 
-	/* LOG_INF("Initialize ieee802.15.4 devices"); */
-	/* *** */
-	if (!device_is_ready(rx_dev)) {
-		LOG_ERR("IEEE 802.15.4 rx device not ready");
-		return -EIO;
+	LOG_INF("Initialize ieee802.15.4 devices");
+
+	for (int i = 0; i < ARRAY_SIZE(devlist); i++) {
+
+		if (!devlist[i])
+			continue;
+
+		if (!device_is_ready(devlist[i])) {
+			LOG_ERR("  - %s: device not ready", devlist[i]->name);
+			return -EIO;
+		}
+
+		api = (struct ieee802154_radio_api *)devlist[i]->api;
+		ret = api->start(devlist[i]);
+		if (ret) {
+			return ret;
+		}
+		LOG_INF("  - %s: done", devlist[i]->name);
 	}
 
-	rx_api = (struct ieee802154_radio_api *)rx_dev->api;
-	rx_api->start(rx_dev);
-
-	/* *** */
-	if (!device_is_ready(tx_dev)) {
-		LOG_ERR("IEEE 802.15.4 tx device not ready");
-		return -EIO;
-	}
-
-	tx_api = (struct ieee802154_radio_api *)tx_dev->api;
-	tx_api->start(tx_dev);
-
-	/* *** */
-	if (!device_is_ready(tx_ttc_dev)) {
-		LOG_ERR("IEEE 802.15.4 tx device not ready");
-		return -EIO;
-	}
-
-	ttc_api = (struct ieee802154_radio_api *)tx_ttc_dev->api;
-	ttc_api->start(tx_ttc_dev);
-
-	return 0;
+	return ret;
 }
 
 int main(void)

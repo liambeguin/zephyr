@@ -5,15 +5,17 @@
  */
 #include <zephyr/dt-bindings/ieee802154/ieee802154_adf702x.h>
 
+// #define TTC_MODE 1
 / {
 	chosen {
 		led0 = &led0;
 
-		zephyr,ieee802154 = &adf7024_tx_800;
+#ifdef TTC_MODE
+		zephyr,ieee802154_tx_ttc = &adf7024_tx_400;
+#else
 		zephyr,ieee802154_tx = &adf7024_tx_800;
 		zephyr,ieee802154_rx = &adf7024_rx_800;
-
-		zephyr,ieee802154_tx_ttc = &adf7024_tx_400;
+#endif
 	};
 };
 
@@ -27,6 +29,7 @@
 		   <&gpio0 22 GPIO_ACTIVE_LOW>,
 		   <&gpio0 26 GPIO_ACTIVE_LOW>;
 
+#if TTC_MODE
 	adf7024_tx_400: ieee802154@0 {
 		status = "okay";
 		compatible = "adi,adf702x";
@@ -39,6 +42,7 @@
 		irq-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 	};
 
+#else
 	adf7024_rx_800: ieee802154@1 {
 		status = "okay";
 		compatible = "adi,adf702x";
@@ -60,4 +64,5 @@
 
 		irq-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
 	};
+#endif
 };
