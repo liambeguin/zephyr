@@ -56,9 +56,7 @@ static int cmd_adf702x_status(const struct shell *sh, size_t argc, char **argv)
 	const struct ieee802154_radio_api *api = dev->api;
 	struct ieee802154_attr_value val;
 
-	api->attr_get(dev, 0, &val);
-
-	return 0;
+	return api->attr_get(dev, IEEE802154_ATTR_ADF702X_STATUS, &val);
 }
 
 static int cmd_adf702x_cw(const struct shell *sh, size_t argc, char **argv)
@@ -89,9 +87,7 @@ static int cmd_adf702x_dump(const struct shell *sh, size_t argc, char **argv)
 	const struct ieee802154_radio_api *api = dev->api;
 	struct ieee802154_attr_value val;
 
-	api->attr_get(dev, 2, &val);
-
-	return 0;
+	return api->attr_get(dev, IEEE802154_ATTR_ADF702X_DUMP, &val);
 }
 
 static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)

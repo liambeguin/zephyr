@@ -62,6 +62,12 @@
 #define CMD_RS_ENCODE			0xD0 // Calculates and appends the Reed Solomon check bytes to the transmit payload data stored in packet RAM.
 #define CMD_RS_DECODE			0xD2 // Performs a Reed Solomon error correction on the received payload data stored in packet RAM.
 
+
+/* Custom IEEE802154 attributes */
+#define IEEE802154_ATTR_ADF702X_STATUS  (IEEE802154_TX_MODE_PRIV_START + 1)
+#define IEEE802154_ATTR_ADF702X_RAW_REG (IEEE802154_TX_MODE_PRIV_START + 2)
+#define IEEE802154_ATTR_ADF702X_DUMP    (IEEE802154_TX_MODE_PRIV_START + 3)
+
 /* Build-time structure
  **********************
  */

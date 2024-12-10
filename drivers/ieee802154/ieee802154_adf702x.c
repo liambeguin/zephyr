@@ -648,38 +648,10 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 			    struct ieee802154_attr_value *value)
 {
 	const struct adf702x_config *conf = dev->config;
+	struct adf702x_context *ctx = dev->data;
 	uint8_t bram[64] = {0};
 
-#if CONFIG_IEEE802154_RAW_MODE
-	// in RAW_MODE we kinda hijack this feature
-	switch (attr) {
-	case 0:
-		adf702x_get_status(dev);
-		adf702x_print_status(dev);
-		break;
-	case 1:
-		adf702x_ram_read(dev, value->phy_supported_channel_pages, 1, bram);
-		value->phy_supported_channel_pages = bram[0];
-		LOG_INST_WRN(conf->log, "value: %02X", bram[0]);
-		break;
-	case 2:
-		adf702x_ram_dump_conf(dev);
-		break;
-	case 3:
-		adf702x_set_fw_state(dev, FW_STATE_PHY_RX);
-		break;
-	default:
-		return -ENOENT;
-	}
-
-	return 0;
-#else
-	struct adf702x_context *ctx = dev->data;
-
-	// Dummy stuff
-	LOG_INST_DBG(conf->log, "attr_get %d", attr);
-
-	switch (attr) {
+	switch ((int)attr) {
 	case IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES:
 		value->phy_supported_channel_pages = ctx->cc_page;
 		return 0;
@@ -687,10 +659,23 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 	case IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES:
 		value->phy_supported_channels = &ctx->cc_channels;
 		return 0;
+	case IEEE802154_ATTR_ADF702X_STATUS:
+		adf702x_get_status(dev);
+		adf702x_print_status(dev);
+		break;
+	case IEEE802154_ATTR_ADF702X_RAW_REG:
+		adf702x_ram_read(dev, value->phy_supported_channel_pages, 1, bram);
+		value->phy_supported_channel_pages = bram[0];
+		LOG_INST_WRN(conf->log, "value: %02X", bram[0]);
+		break;
+	case IEEE802154_ATTR_ADF702X_DUMP:
+		adf702x_ram_dump_conf(dev);
+		break;
 	default:
 		return -ENOENT;
 	}
-#endif
+
+	return 0;
 }
 
 static int adf702x_cw(const struct device *dev)
