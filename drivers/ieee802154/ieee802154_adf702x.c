@@ -6,12 +6,9 @@
 
 #define DT_DRV_COMPAT adi_adf702x
 #define LOG_MODULE_NAME adf702x
-/* #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL */
-#define LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr/logging/log.h>
-#include <zephyr/logging/log_instance.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_IEEE802154_DRIVER_LOG_LEVEL);
 
 #include <errno.h>
 #include <stdio.h>
