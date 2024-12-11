@@ -478,59 +478,48 @@ static void adf702x_iface_init(struct net_if *iface)
 
 	ctx->iface = iface;
 
-	/* net_ppp_init(iface); */
-	/* ieee802154_init(iface); */
+	ieee802154_init(iface);
 }
 
 static enum ieee802154_hw_caps adf702x_get_capabilities(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	const struct adf702x_config *conf = dev->config;
+
+	LOG_INST_DBG(conf->log, "iface hw_caps");
+
 	return IEEE802154_HW_FCS;
 }
 
-#if 0
 static int adf702x_cca(const struct device *dev)
 {
 	struct adf702x_context *ctx = dev->data;
-	uint8_t rssi = 0;
 	ARG_UNUSED(dev);
-	int ret = 0;
 
-	// TODO
-	LOG_INST_DBG(conf->log, "CCA TODO");
-	return 0;
-
-	// must be in PHY_ON
-	ret = adf702x_get_status(dev);
-	if (ret)
-		return ret;
-
-	if (FIELD_GET(STATUS_FW_STATE, ctx->status) != FW_STATE_PHY_ON)
+	if (!ctx->is_up)
 		return -EIO;
 
-	ret = adf702x_set_fw_state(dev, FW_STATE_GET_RSSI);
-	if (ret)
-		return ret;
-
-	ret = adf702x_ram_read(dev, ADF702X_REG_RSSI_READBACK, 1, &rssi);
-	if (ret)
-		return ret;
-
-	// TODO now do something with it??
-
-	return ret;
+	return 0;
 }
 
 static int adf702x_set_channel(const struct device *dev, uint16_t channel)
 {
-	const struct adf702x_config *conf = dev->config;
+	ARG_UNUSED(dev);
+	ARG_UNUSED(channel);
 
-	LOG_INST_ERR(conf->log, "%s: channel=%d", __func__, channel);
-
-	/* return -EALREADY; */
 	return 0;
 }
-#endif
+
+static int adf702x_filter(const struct device *dev,
+		bool set,
+		enum ieee802154_filter_type type,
+		const struct ieee802154_filter *filter)
+{
+	const struct adf702x_config *conf = dev->config;
+
+	LOG_INST_DBG(conf->log, "Applying filter %u", type);
+
+	return 0;
+}
 
 static int adf702x_set_txpower(const struct device *dev, int16_t dBm)
 {
@@ -626,6 +615,8 @@ static int adf702x_stop(const struct device *dev)
 	return 0;
 }
 
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
 
 // dummy always return suppored_ch pages
 static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
@@ -634,6 +625,12 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 	uint8_t bram[64] = {0};
+
+	if (ieee802154_attr_get_channel_page_and_range(
+				attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+				&drv_attr.phy_supported_channels, value) == 0) {
+		return 0;
+	}
 
 	switch ((int)attr) {
 	case IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_PAGES:
@@ -680,9 +677,11 @@ static int adf702x_cw(const struct device *dev)
 
 static const struct ieee802154_radio_api adf702x_radio_api = {
 	.iface_api.init		= adf702x_iface_init,
+
 	.get_capabilities	= adf702x_get_capabilities,
-	/* .cca			= adf702x_cca, */
-	/* .set_channel		= adf702x_set_channel, */
+	.cca			= adf702x_cca,
+	.set_channel		= adf702x_set_channel,
+	.filter			= adf702x_filter,
 	.set_txpower		= adf702x_set_txpower,
 	.tx			= adf702x_tx,
 	.start			= adf702x_start,
@@ -897,9 +896,8 @@ static int adf702x_init(const struct device *dev)
 		&adf702x_ctx_config_##n,				\
 		CONFIG_IEEE802154_ADF702X_INIT_PRIO,			\
 		&adf702x_radio_api,					\
-		DUMMY_L2,						\
-		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
-
+		IEEE802154_L2, NET_L2_GET_CTX_TYPE(IEEE802154_L2),	\
+		IEEE802154_MTU);
 
 #define IEEE802154_ADF702X_INIT(inst)					\
 	IEEE802154_ADF702X_DEVICE_CONFIG(inst);				\
