@@ -176,13 +176,7 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 		raw_payload[i] = (uint8_t)strtol(argv[ADF702X_ARGV_TX_FIRST + i], NULL, 16);
 	}
 
-	ret = net_if_up(iface);
-	if (ret) {
-		shell_error(sh, "if up error %d", ret);
-	}
-
 	shell_info(sh, "- Sending RAW packet via AF_PACKET socket");
-
 	fd = zsock_socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IEEE802154));
 	if (fd < 0) {
 		shell_error(sh, "*** Failed to create RAW socket : %d", errno);
