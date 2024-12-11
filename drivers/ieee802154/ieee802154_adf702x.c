@@ -857,9 +857,9 @@ static int adf702x_init(const struct device *dev)
 }
 
 #define IEEE802154_ADF702X_DEVICE_CONFIG(n)				\
-	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, n, LOG_LEVEL_DBG);	\
+	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, DT_INST_REG_ADDR_RAW(n), LOG_LEVEL_DBG);	\
 	static const struct adf702x_config adf702x_ctx_config_##n = {	\
-		.inst = n,						\
+		.inst = DT_INST_REG_ADDR_RAW(n),						\
 		.name = DT_NODE_FULL_NAME(DT_DRV_INST(n)),		\
 		.irq_gpio = GPIO_DT_SPEC_INST_GET(n, irq_gpios),	\
 		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) |	\
@@ -869,7 +869,7 @@ static int adf702x_init(const struct device *dev)
 						869000000),		\
 		.radio_profile = DT_INST_PROP_OR(n, adf7024_radio_profile,	\
 						PROFILE_A),		\
-		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, n)		\
+		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, DT_INST_REG_ADDR_RAW(n))		\
 	}
 
 #define IEEE802154_ADF702X_DEVICE_DATA(n)				\
