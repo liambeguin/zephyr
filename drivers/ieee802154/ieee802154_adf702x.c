@@ -467,10 +467,14 @@ static int adf702x_regs_set_pa_level(const struct device *dev, float dBm)
 static void adf702x_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct adf702x_context *ctx = dev->data;
 	const struct adf702x_config *conf = dev->config;
+	struct adf702x_context *ctx = dev->data;
+
+	sys_rand_get(ctx->mac, 8U);
+	net_if_set_link_addr(iface, ctx->mac, 8, NET_LINK_IEEE802154);
 
 	LOG_INST_DBG(conf->log, "iface init");
+	LOG_INST_HEXDUMP_DBG(conf->log, ctx->mac, 8, "MAC: ");
 
 	ctx->iface = iface;
 

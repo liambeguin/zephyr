@@ -265,6 +265,8 @@ struct adf702x_context {
 	struct net_if *iface;
 	bool is_up;
 
+	uint8_t mac[8];
+
 	struct adf702x_conf_regs conf_regs;
 	uint8_t status;
 
