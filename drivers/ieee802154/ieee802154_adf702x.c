@@ -626,27 +626,7 @@ static int adf702x_stop(const struct device *dev)
 	return 0;
 }
 
-int adf702x_configure(const struct device *dev,
-		      enum ieee802154_config_type type,
-		      const struct ieee802154_config *config)
-{
-	const struct adf702x_config *conf = dev->config;
-	int ret = -EINVAL;
 
-	LOG_INST_DBG(conf->log, "Configure %d", type);
-
-	switch (type) {
-	case IEEE802154_CONFIG_AUTO_ACK_FPB:
-	case IEEE802154_CONFIG_ACK_FPB:
-	case IEEE802154_CONFIG_PAN_COORDINATOR:
-	case IEEE802154_CONFIG_PROMISCUOUS:
-	case IEEE802154_CONFIG_EVENT_HANDLER:
-	default:
-		break;
-	}
-
-	return ret;
-}
 // dummy always return suppored_ch pages
 static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 			    struct ieee802154_attr_value *value)
@@ -707,7 +687,6 @@ static const struct ieee802154_radio_api adf702x_radio_api = {
 	.tx			= adf702x_tx,
 	.start			= adf702x_start,
 	.stop			= adf702x_stop,
-	.configure		= adf702x_configure,
 	.attr_get		= adf702x_attr_get,
 	.continuous_carrier	= adf702x_cw,
 };
@@ -921,8 +900,6 @@ static int adf702x_init(const struct device *dev)
 		DUMMY_L2,						\
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
-		/* PPP_L2, NET_L2_GET_CTX_TYPE(PPP_L2), 125); */
-		/* IEEE802154_L2, NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125)  */
 
 #define IEEE802154_ADF702X_INIT(inst)					\
 	IEEE802154_ADF702X_DEVICE_CONFIG(inst);				\
@@ -931,6 +908,5 @@ static int adf702x_init(const struct device *dev)
 	COND_CODE_1(CONFIG_IEEE802154_RAW_MODE,				\
 		    (IEEE802154_ADF702X_RAW_DEVICE_INIT(inst);),	\
 		    (IEEE802154_ADF702X_NET_DEVICE_INIT(inst);))
-	/* IEEE802154_ADF702X_RAW_DEVICE_INIT(inst); */
 
 DT_INST_FOREACH_STATUS_OKAY(IEEE802154_ADF702X_INIT)
