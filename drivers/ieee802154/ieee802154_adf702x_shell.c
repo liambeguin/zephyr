@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/net/ieee802154.h>
 #include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/shell/shell.h>
 
@@ -90,6 +91,24 @@ static int cmd_adf702x_dump(const struct shell *sh, size_t argc, char **argv)
 	return api->attr_get(dev, IEEE802154_ATTR_ADF702X_DUMP, &val);
 }
 
+#ifndef CONFIG_IEEE802154_RAW_MODE
+static int cmd_adf702x_start(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
+	struct net_if *iface = net_if_lookup_by_dev(dev);
+
+	return net_if_up(iface);
+}
+
+static int cmd_adf702x_stop(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
+	struct net_if *iface = net_if_lookup_by_dev(dev);
+
+	return net_if_down(iface);
+}
+#endif
+
 static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 {
 #if CONFIG_IEEE802154_RAW_MODE
@@ -139,6 +158,10 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	adf702x_cmds, SHELL_CMD_ARG(status, &dsub_adf702x, "read status", cmd_adf702x_status, 2, 0),
+#ifndef CONFIG_IEEE802154_RAW_MODE
+	SHELL_CMD_ARG(start, &dsub_adf702x, "start ADF702x iface", cmd_adf702x_start, 2, 0),
+	SHELL_CMD_ARG(stop, &dsub_adf702x, "stop ADF702x iface", cmd_adf702x_stop, 2, 0),
+#endif
 	SHELL_CMD_ARG(dump, &dsub_adf702x, "dump ADF702x registers", cmd_adf702x_dump, 2, 0),
 	SHELL_CMD_ARG(cw, &dsub_adf702x, "control continuous carrier mode", cmd_adf702x_cw, 3, 0),
 #if CONFIG_IEEE802154_RAW_MODE
