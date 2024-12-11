@@ -635,7 +635,7 @@ void ieee802154_init(struct net_if *iface)
 	 */
 	ctx->sequence = sys_rand32_get() & 0xFF;
 
-	ctx->channel = IEEE802154_NO_CHANNEL;
+	/* ctx->channel = IEEE802154_NO_CHANNEL; */
 	ctx->flags = NET_L2_MULTICAST;
 	if (ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_PROMISC) {
 		ctx->flags |= NET_L2_PROMISC_MODE;
