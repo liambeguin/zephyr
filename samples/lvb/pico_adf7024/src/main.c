@@ -20,10 +20,12 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 /* Misc devices */
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
+#if CONFIG_IEEE802154_RAW_MODE
 /* ieee802.15.4 devices */
 static const struct device *const rx_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_ieee802154_rx));
 static const struct device *const tx_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_ieee802154_tx));
 static const struct device *const tx_ttc_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_ieee802154_tx_ttc));
+#endif
 
 
 static int init_led(void)
@@ -40,15 +42,16 @@ static int init_led(void)
 
 static int init_ieee802154(void)
 {
+	int ret = 0;
+#if CONFIG_IEEE802154_RAW_MODE
 	struct ieee802154_radio_api *api;
 	const struct device *devlist[] = {
 		rx_dev,
 		tx_dev,
 		tx_ttc_dev,
 	};
-	int ret = 0;
 
-	LOG_INF("Initialize ieee802.15.4 devices");
+	LOG_INF("Initialize RAW IEEE802.15.4 devices");
 
 	for (int i = 0; i < ARRAY_SIZE(devlist); i++) {
 
@@ -67,6 +70,7 @@ static int init_ieee802154(void)
 		}
 		LOG_INF("  - %s: done", devlist[i]->name);
 	}
+#endif
 
 	return ret;
 }
@@ -77,13 +81,11 @@ int main(void)
 
 	init_led();
 
-#if CONFIG_IEEE802154_RAW_MODE
 	ret = init_ieee802154();
 	if (ret) {
 		LOG_ERR("Unable to initialize ieee802154");
 		return ret;
 	}
-#endif
 
 	return 0;
 }
