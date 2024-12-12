@@ -30,6 +30,9 @@ config IEEE802154_ADF702X_INIT_PRIO
 config IEEE802154_ADF702X_SHELL
 	bool "ADF702X debug shell"
 	default y
+	select POSIX_API
+	select NET_SOCKETS
+	select NET_SOCKETS_PACKET
 	help
 	  Enable ADF702x shell commands, useful during debugging to send raw
 	  messages, and read statuses.
