@@ -16,6 +16,10 @@
 #define ADF702X_ARGV_TX_FIRST (2)
 #define ADF702X_MAX_TXLEN     (100)
 
+#define PRIORITY  k_thread_priority_get(k_current_get())
+#define STACKSIZE 1024
+
+
 #define ADF702X_LIST_ENTRY(node_id)                                                                \
 	{                                                                                          \
 		.dev = DEVICE_DT_GET(node_id),                                                     \
@@ -166,6 +170,95 @@ static int cmd_adf702x_stop(const struct shell *sh, size_t argc, char **argv)
 	return net_if_down(iface);
 }
 
+static k_tid_t rx_tid;
+static K_THREAD_STACK_DEFINE(rx_stack, STACKSIZE);
+static struct k_thread rx_data;
+
+static void rx(int *rx_fd, const struct shell *sh)
+{
+        int fd = POINTER_TO_INT(rx_fd);
+	uint8_t buffer[248] = {0};
+
+	struct sockaddr_in src_addr;
+	socklen_t addr_len = sizeof(src_addr);
+
+        int ret;
+
+	struct msghdr msg = {0};
+	struct iovec iov;
+
+        shell_info(sh, "[%d] Waiting for data...", fd);
+
+        while (1) {
+                memset(&msg, 0, sizeof(msg));
+                memset(&iov, 0, sizeof(iov));
+
+		iov.iov_base = buffer;
+		iov.iov_len = sizeof(buffer);
+		msg.msg_iov = &iov;
+		msg.msg_iovlen = 1;
+
+		ret = recvfrom(fd, buffer, sizeof(buffer), 0,
+                             (struct sockaddr *)&src_addr, &addr_len);
+		if (ret < 0) {
+			shell_error(sh, "*** Failed to recv: %s (%d)", strerror(errno), errno);
+			ret = -errno;
+			break;
+		}
+
+		shell_error(sh, "Got %d bytes", ret);
+		shell_hexdump(sh, buffer, ret);
+	}
+
+	close(fd);
+}
+
+static int cmd_adf702x_rx(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
+	struct net_if *iface = net_if_lookup_by_dev(dev);
+	int ret = 0;
+	int fd;
+
+	struct sockaddr_ll socket_sll = {
+		.sll_ifindex = net_if_get_by_iface(iface),
+		.sll_family = AF_PACKET,
+	};
+
+	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IEEE802154));
+	if (fd < 0) {
+		shell_error(sh, "*** Failed to create RAW socket: %s", strerror(errno));
+		ret = -errno;
+		goto out;
+	}
+
+	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+		shell_error(sh, "*** Failed to bind packet socket: %s", strerror(errno));
+		ret = -errno;
+		goto cleanup;
+	}
+
+	rx_tid = k_thread_create(&rx_data, rx_stack,
+			K_THREAD_STACK_SIZEOF(rx_stack),
+			(k_thread_entry_t)rx,
+			INT_TO_POINTER(fd),
+			(void *)sh,
+			NULL, PRIORITY, 0, K_NO_WAIT);
+	if (!rx_tid) {
+		ret = -ENOENT;
+		errno = -ret;
+		shell_error(sh, "*** Failed to create rx thread: %s", strerror(errno));
+		goto cleanup;
+	}
+
+	return ret;
+
+cleanup:
+	close(fd);
+out:
+	return ret;
+}
+
 static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
@@ -225,6 +318,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(stop, &dsub_adf702x, "stop ADF702x iface", cmd_adf702x_stop, 2, 0),
 	SHELL_CMD_ARG(dump, &dsub_adf702x, "dump ADF702x registers", cmd_adf702x_dump, 2, 0),
 	SHELL_CMD_ARG(cw, &dsub_adf702x, "control continuous carrier mode", cmd_adf702x_cw, 3, 0),
+	SHELL_CMD_ARG(rx, &dsub_adf702x, "start rx thread", cmd_adf702x_rx, 2, 0),
 	SHELL_CMD_ARG(tx, &dsub_adf702x, "Send raw data", cmd_adf702x_tx, 3, 250),
 	SHELL_SUBCMD_SET_END);
 
