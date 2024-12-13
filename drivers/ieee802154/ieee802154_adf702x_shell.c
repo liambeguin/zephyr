@@ -95,25 +95,19 @@ static int cmd_adf702x_dump(const struct shell *sh, size_t argc, char **argv)
 	return api->attr_get(dev, IEEE802154_ATTR_ADF702X_DUMP, &val);
 }
 
-#ifndef CONFIG_IEEE802154_RAW_MODE
+#if CONFIG_IEEE802154_RAW_MODE
 static int cmd_adf702x_start(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
-
-	return net_if_up(iface);
+	shell_error(sh, "Not available in CONFIG_IEEE802154_RAW_MODE");
+	return 0;
 }
 
 static int cmd_adf702x_stop(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
-
-	return net_if_down(iface);
+	shell_error(sh, "Not available in CONFIG_IEEE802154_RAW_MODE");
+	return 0;
 }
-#endif
 
-#if CONFIG_IEEE802154_RAW_MODE
 static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
@@ -154,7 +148,23 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 	net_pkt_unref(pkt);
 	return 0;
 }
-#else
+
+#else /* CONFIG_IEEE802154_RAW_MODE */
+static int cmd_adf702x_start(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
+	struct net_if *iface = net_if_lookup_by_dev(dev);
+
+	return net_if_up(iface);
+}
+
+static int cmd_adf702x_stop(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
+	struct net_if *iface = net_if_lookup_by_dev(dev);
+
+	return net_if_down(iface);
+}
 
 static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 {
@@ -207,7 +217,7 @@ release_fd:
 out:
 	return ret;
 }
-#endif
+#endif /* CONFIG_IEEE802154_RAW_MODE */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	adf702x_cmds, SHELL_CMD_ARG(status, &dsub_adf702x, "read status", cmd_adf702x_status, 2, 0),
