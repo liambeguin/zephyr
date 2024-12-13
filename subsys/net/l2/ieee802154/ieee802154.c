@@ -625,6 +625,8 @@ void ieee802154_init(struct net_if *iface)
 	k_sem_init(&ctx->ctx_lock, 1, 1);
 	k_sem_init(&ctx->ack_lock, 0, 1);
 
+	return;
+
 	/* no need to lock the context here as it has
 	 * not been published yet.
 	 */
