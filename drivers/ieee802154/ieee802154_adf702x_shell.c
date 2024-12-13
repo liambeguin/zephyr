@@ -154,41 +154,40 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 	net_pkt_unref(pkt);
 	return 0;
 }
-
 #else
+
 static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
 	struct net_if *iface = net_if_lookup_by_dev(dev);
-	int bytes_to_send;
 	uint8_t raw_payload[64] = {0};
-	int ret;
-
-	struct sockaddr_ll socket_sll = {0};
 	struct msghdr msg = {0};
 	struct iovec io_vector;
-	bool result = false;
+	int bytes_to_send;
+	int ret = 0;
 	int fd;
 
-	bytes_to_send = argc - ADF702X_ARGV_TX_FIRST;
+	struct sockaddr_ll socket_sll = {
+		.sll_ifindex = net_if_get_by_iface(iface),
+		.sll_protocol = ETH_P_IEEE802154,
+		.sll_family = AF_PACKET,
+	};
 
+	bytes_to_send = argc - ADF702X_ARGV_TX_FIRST;
 	for (int i = 0; i < bytes_to_send; i++) {
 		raw_payload[i] = (uint8_t)strtol(argv[ADF702X_ARGV_TX_FIRST + i], NULL, 16);
 	}
 
-	shell_info(sh, "- Sending RAW packet via AF_PACKET socket");
-	fd = zsock_socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IEEE802154));
+	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IEEE802154));
 	if (fd < 0) {
-		shell_error(sh, "*** Failed to create RAW socket : %d", errno);
+		shell_error(sh, "*** Failed to create RAW socket: %s", strerror(errno));
+		ret = -errno;
 		goto out;
 	}
 
-	socket_sll.sll_ifindex = net_if_get_by_iface(iface);
-	socket_sll.sll_family = AF_PACKET;
-	socket_sll.sll_protocol = ETH_P_IEEE802154;
-
-	if (zsock_bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
-		shell_error(sh, "*** Failed to bind packet socket : %d", errno);
+	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+		shell_error(sh, "*** Failed to bind packet socket: %s", strerror(errno));
+		ret = -errno;
 		goto release_fd;
 	}
 
@@ -197,17 +196,18 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 	msg.msg_iov = &io_vector;
 	msg.msg_iovlen = 1;
 
-	if (zsock_sendmsg(fd, &msg, 0) != bytes_to_send) {
-		shell_error(sh, "*** Failed to send, errno %d", errno);
+	if (sendmsg(fd, &msg, 0) != bytes_to_send) {
+		shell_error(sh, "*** Failed to send: %s", strerror(errno));
+		ret = -errno;
 		goto release_fd;
 	}
 
 release_fd:
-	zsock_close(fd);
+	close(fd);
 out:
-	return result;
-#endif
+	return ret;
 }
+#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	adf702x_cmds, SHELL_CMD_ARG(status, &dsub_adf702x, "read status", cmd_adf702x_status, 2, 0),
