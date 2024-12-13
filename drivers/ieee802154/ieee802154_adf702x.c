@@ -704,7 +704,42 @@ static inline void adf702x_irq_handler(const struct device *port,
 
 static void adf702x_process_rx_frame(const struct device *dev)
 {
-	adf702x_packet_read(dev, "\e[1;31mRX\e[0m");
+	const struct adf702x_config *conf = dev->config;
+	struct adf702x_context *ctx = dev->data;
+	uint8_t pkt_ram[256] = {0};
+	uint8_t header[1] = {0};
+	struct net_pkt *pkt;
+	uint8_t len = 0;
+
+	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR, 1, header);
+	len = header[0] - 1;
+
+	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR + 1, len, pkt_ram);
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+	if (!pkt) {
+		LOG_INST_ERR(conf->log, "No free pkt available");
+		goto flush;
+	}
+
+	if (net_pkt_write(pkt, pkt_ram, len)) {
+		LOG_INST_DBG(conf->log, "No content read?");
+		goto out;
+	}
+
+	LOG_INST_INF(conf->log, "caught packet %p (%u bytes)", pkt, len);
+	if (net_recv_data(ctx->iface, pkt) < 0) {
+		LOG_INST_DBG(conf->log, "Packet dropped by NET stack");
+		goto out;
+	}
+
+	return;
+
+flush:
+	LOG_INST_DBG(conf->log, "flushing RX");
+out:
+	if (pkt) {
+		net_pkt_unref(pkt);
+	}
 }
 
 static void adf702x_process_tx_frame(const struct device *dev)
