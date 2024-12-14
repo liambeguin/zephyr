@@ -525,7 +525,7 @@ static int adf702x_set_txpower(const struct device *dev, int16_t dBm)
 {
 	const struct adf702x_config *conf = dev->config;
 
-	LOG_INST_DBG(conf->log, "%s: dBm=%d", __func__, dBm);
+	LOG_INST_DBG(conf->log, "dBm=%d", dBm);
 
 	return adf702x_regs_set_pa_level(dev, dBm);
 }
@@ -538,8 +538,7 @@ static int adf702x_tx(const struct device *dev,
 	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 	int ret;
-
-	LOG_INST_DBG(conf->log, "%s: entering", __func__);
+	LOG_INST_DBG(conf->log, "entering");
 
 	if (!ctx->is_up)
 		return -ENETDOWN;
