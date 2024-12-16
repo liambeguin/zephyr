@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Liam Beguin <liambeguin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_HE360_KLUDGE
+	def_bool $(shields_list_contains,he360_kludge)
+
+if SHIELD_HE360_KLUDGE
+	config SHELL_PROMPT_UART
+		default "he360-kludge:~$ "
+endif # SHIELD_HE360_KLUDGE
