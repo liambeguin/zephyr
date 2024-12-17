@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/dt-bindings/ieee802154/ieee802154_adf702x.h>
 
 / {
 	chosen {
@@ -78,7 +79,7 @@
 		   <&gpio0 05 GPIO_ACTIVE_LOW>;
 
 	/* ADF7024DB1Z_nCS RX */
-	adf7024_tx: ieee802144@0 {
+	adf7024_tx: adf7024-rx-800@0 {
 		status = "okay";
 		compatible = "adi,adf702x";
 		reg = <0>;
@@ -90,13 +91,14 @@
 	};
 
 	/* ADF7024DB3Z_nCS TX */
-	adf7024_rx: ieee802144@1 {
+	adf7024_rx: adf7024-tx-400@1 {
 		status = "okay";
 		compatible = "adi,adf702x";
 		reg = <1>;
 		spi-max-frequency = <1000000>;
 
 		channel-frequency = <432100000>;
+		adf7024,radio-profile = <RADIO_PROFILE_B>;
 
 		irq-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 	};
