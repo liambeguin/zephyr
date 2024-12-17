@@ -272,7 +272,6 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 
 	struct sockaddr_ll socket_sll = {
 		.sll_ifindex = net_if_get_by_iface(iface),
-		.sll_protocol = ETH_P_IEEE802154,
 		.sll_family = AF_PACKET,
 	};
 
