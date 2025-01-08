@@ -81,8 +81,8 @@
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>,
 		   <&gpio0 05 GPIO_ACTIVE_LOW>;
 
-	/* ADF7024DB1Z_nCS RX */
-	adf7024_tx: adf7024-rx-800@0 {
+	/* ADF7024DB1Z RX */
+	downlink: adf7024-rx-800@0 {
 		status = "okay";
 		compatible = "adi,adf702x";
 		reg = <0>;
@@ -93,8 +93,8 @@
 		irq-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 	};
 
-	/* ADF7024DB3Z_nCS TX */
-	adf7024_rx: adf7024-tx-400@1 {
+	/* ADF7024DB3Z TX */
+	uplink: adf7024-tx-400@1 {
 		status = "okay";
 		compatible = "adi,adf702x";
 		reg = <1>;
