@@ -439,6 +439,22 @@ static int adf702x_packet_write(const struct device *dev, uint8_t *data, uint8_t
 	return 0;
 }
 
+static int adf702x_configure_device(const struct device *dev)
+{
+	struct adf702x_context *ctx = dev->data;
+	int ret;
+
+	ret = adf702x_ram_write(dev, 0x100, 64, (uint8_t *)&ctx->conf_regs);
+	if (ret)
+		return ret;
+
+	ret = adf702x_set_command(dev, CMD_CONFIG_DEV);
+	while(!(ctx->status & STATUS_CMD_READY))
+		adf702x_get_status(dev);
+
+	return ret;
+}
+
 static int adf702x_regs_set_channel_freq(const struct device *dev, uint32_t freq)
 {
 	const struct adf702x_config *conf = dev->config;
@@ -878,11 +894,7 @@ static int adf702x_init(const struct device *dev)
 	adf702x_regs_set_pa_level(dev, 13.5);
 	adf7024_regs_set_profile(dev, conf->radio_profile);
 
-	adf702x_ram_write(dev, 0x100, 64, (uint8_t *)&ctx->conf_regs);
-	adf702x_set_command(dev, CMD_CONFIG_DEV);
-
-	while(!(ctx->status & STATUS_CMD_READY))
-		adf702x_get_status(dev);
+	adf702x_configure_device(dev);
 
 	LOG_INST_INF(conf->log, "Configured, status: %X",
 		(uint8_t)FIELD_GET(STATUS_FW_STATE, ctx->status));
