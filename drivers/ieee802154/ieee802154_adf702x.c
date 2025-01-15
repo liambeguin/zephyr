@@ -486,7 +486,7 @@ static int adf702x_regs_set_pa_level(const struct device *dev, float dBm)
 {
 	struct adf702x_context *ctx = dev->data;
 
-	ctx->conf_regs.radio_pa_level = (uint8_t)(dBm * 2 + 36);
+	ctx->conf_regs.radio_pa_level = CLAMP((uint8_t)(dBm * 2 + 36), 10, 63);
 
 	return 0;
 }
