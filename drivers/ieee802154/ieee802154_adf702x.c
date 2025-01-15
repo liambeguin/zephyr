@@ -37,8 +37,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_IEEE802154_DRIVER_LOG_LEVEL);
 
 #include "ieee802154_adf702x.h"
 
-#define MAX_POLL_LOOPS 200
-
 
 static int adf7024_regs_set_profile(const struct device *dev, enum adf7024_profile profile)
 {
@@ -299,11 +297,24 @@ static int adf702x_set_fw_state(const struct device *dev, uint8_t fw_state)
 	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 	int ret = 0;
-	int cnt = 0;
 
 	switch(fw_state) {
 	case FW_STATE_PHY_OFF:
-		adf702x_set_command(dev, CMD_PHY_OFF);
+		while((FIELD_GET(STATUS_FW_STATE, ctx->status) != FW_STATE_PHY_OFF) && !ret) {
+			switch (FIELD_GET(STATUS_FW_STATE, ctx->status)) {
+			case FW_STATE_BUSY:
+				break;
+			case FW_STATE_PHY_TX:
+			case FW_STATE_PHY_RX:
+				ret = adf702x_set_command(dev, CMD_PHY_ON);
+				break;
+			default:
+				ret = adf702x_set_command(dev, CMD_PHY_OFF);
+				break;
+			}
+
+			ret = adf702x_get_status(dev);
+		}
 		break;
 	case FW_STATE_PHY_ON:
 		adf702x_set_command(dev, CMD_PHY_ON);
@@ -324,11 +335,7 @@ static int adf702x_set_fw_state(const struct device *dev, uint8_t fw_state)
 
 	do {
 		ret = adf702x_get_status(dev);
-		cnt++;
-	} while((FIELD_GET(STATUS_FW_STATE, ctx->status) != fw_state) && (cnt < MAX_POLL_LOOPS));
-
-	if (cnt == MAX_POLL_LOOPS)
-		LOG_INST_WRN(conf->log, "set_fw_status: TIMEOUT");
+	} while((FIELD_GET(STATUS_FW_STATE, ctx->status) != fw_state));
 
 	return ret;
 }
@@ -391,6 +398,7 @@ static int adf702x_packet_read(const struct device *dev, const char *prefix)
 
 	return 0;
 }
+
 static int adf702x_ram_write(const struct device *dev, int addr, int len, uint8_t *data)
 {
 	const struct adf702x_config *conf = dev->config;
