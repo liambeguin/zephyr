@@ -240,7 +240,7 @@ static int cmd_adf702x_rx(const struct shell *sh, size_t argc, char **argv)
 		.sll_family = AF_PACKET,
 	};
 
-	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IEEE802154));
+	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (fd < 0) {
 		shell_error(sh, "*** Failed to create RAW socket: %s", strerror(errno));
 		ret = -errno;
@@ -295,7 +295,7 @@ static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 		raw_payload[i] = (uint8_t)strtol(argv[ADF702X_ARGV_TX_FIRST + i], NULL, 16);
 	}
 
-	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IEEE802154));
+	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (fd < 0) {
 		shell_error(sh, "*** Failed to create RAW socket: %s", strerror(errno));
 		ret = -errno;
