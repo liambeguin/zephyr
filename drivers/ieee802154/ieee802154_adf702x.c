@@ -864,8 +864,14 @@ static inline int adf702x_configure_irq(const struct device *dev)
 	return 0;
 }
 
-static inline int adf702x_configure_gpios(const struct device *dev)
+static inline int adf702x_regs_configure_gpios(const struct device *dev)
 {
+	const struct adf702x_config *conf = dev->config;
+	struct adf702x_context *ctx = dev->data;
+
+	// ADF702X_BIT_MODE_CONTROL_EXT_PA_EN
+	WRITE_BIT(ctx->conf_regs.mode_control, 0, conf->ext_pa_en);
+
 	// TODO configure gpios for firecodes
 
 	return 0;
@@ -915,6 +921,7 @@ static int adf702x_init(const struct device *dev)
 	adf702x_regs_set_channel_freq(dev, conf->channel_frequency);
 	adf702x_regs_set_pa_level(dev, 13.5);
 	adf7024_regs_set_profile(dev, conf->radio_profile);
+	adf702x_regs_configure_gpios(dev);
 
 	adf702x_configure_device(dev);
 
@@ -944,6 +951,7 @@ static int adf702x_init(const struct device *dev)
 		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),             \
 		.channel_frequency = DT_PROP_OR(DT_DRV_INST(n), channel_frequency, 869000000),     \
 		.radio_profile = DT_INST_PROP_OR(n, adf7024_radio_profile, PROFILE_A),             \
+		.ext_pa_en = DT_INST_PROP_OR(n, adf702x_ext_pa_en, 0),                             \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, DT_INST_REG_ADDR_RAW(n))}
 
 #define IEEE802154_ADF702X_DEVICE_DATA(n) static struct adf702x_context adf702x_ctx_data_##n = {}

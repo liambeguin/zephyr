@@ -22,3 +22,13 @@ properties:
     default: 0
     description: |
       Default radio profile for the ADF7024
+
+  adf702x,ext-pa-en:
+    type: boolean
+    description: |
+      1:
+        external PA enable signal on ATB3 is enabled. The signal is logic high
+        while the ADF7023 is in the PHY_TX state and logic low while in any
+        other nonsleep state.
+      0:
+        external PA enable signal on ADCIN_ATB3 is disabled.
