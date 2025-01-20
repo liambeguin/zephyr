@@ -80,6 +80,7 @@ struct adf702x_config {
 
 	uint32_t channel_frequency;
 	uint8_t radio_profile;
+	float pa_level;
 	uint8_t ext_pa_en;
 
 	LOG_INSTANCE_PTR_DECLARE(log);

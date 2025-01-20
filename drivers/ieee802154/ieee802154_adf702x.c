@@ -919,7 +919,7 @@ static int adf702x_init(const struct device *dev)
 
 	ctx->conf_regs = adf702x_default_conf_regs;
 	adf702x_regs_set_channel_freq(dev, conf->channel_frequency);
-	adf702x_regs_set_pa_level(dev, 13.5);
+	adf702x_regs_set_pa_level(dev, conf->pa_level);
 	adf7024_regs_set_profile(dev, conf->radio_profile);
 	adf702x_regs_configure_gpios(dev);
 
@@ -951,6 +951,7 @@ static int adf702x_init(const struct device *dev)
 		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),             \
 		.channel_frequency = DT_PROP_OR(DT_DRV_INST(n), channel_frequency, 869000000),     \
 		.radio_profile = DT_INST_PROP_OR(n, adf7024_radio_profile, PROFILE_A),             \
+		.pa_level = DT_INST_STRING_UNQUOTED_OR(n, adf702x_pa_level, 13.5),                 \
 		.ext_pa_en = DT_INST_PROP_OR(n, adf702x_ext_pa_en, 0),                             \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, DT_INST_REG_ADDR_RAW(n))}
 

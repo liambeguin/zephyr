@@ -23,6 +23,12 @@ properties:
     description: |
       Default radio profile for the ADF7024
 
+  adf702x,pa-level:
+    type: string
+    default: "13.5"
+    description: |
+      Power Amplifier (PA) level in dBm [-15; 13.5]
+
   adf702x,ext-pa-en:
     type: boolean
     description: |
