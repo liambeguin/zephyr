@@ -105,6 +105,17 @@ static int cmd_adf702x_power(const struct shell *sh, size_t argc, char **argv)
 	return api->attr_get(dev, IEEE802154_ATTR_ADF702X_POWER, &val);
 }
 
+static int cmd_adf702x_rssi(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
+	const struct ieee802154_radio_api *api = dev->api;
+	struct ieee802154_attr_value val;
+
+	api->attr_get(dev, IEEE802154_ATTR_ADF702X_RSSI, &val);
+
+	return 0;
+}
+
 static int cmd_adf702x_dump(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = get_adf702x(argv[ADF702X_ARGV_DEV])->dev;
@@ -331,6 +342,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(start, &dsub_adf702x, "start ADF702x iface", cmd_adf702x_start, 2, 0),
 	SHELL_CMD_ARG(stop, &dsub_adf702x, "stop ADF702x iface", cmd_adf702x_stop, 2, 0),
 	SHELL_CMD_ARG(power, &dsub_adf702x, "configure pa level", cmd_adf702x_power, 3, 0),
+	SHELL_CMD_ARG(rssi, &dsub_adf702x, "read RSSI", cmd_adf702x_rssi, 2, 0),
 	SHELL_CMD_ARG(dump, &dsub_adf702x, "dump ADF702x registers", cmd_adf702x_dump, 2, 0),
 	SHELL_CMD_ARG(cw, &dsub_adf702x, "control continuous carrier mode", cmd_adf702x_cw, 3, 0),
 	SHELL_CMD_ARG(rx, &dsub_adf702x, "start rx thread", cmd_adf702x_rx, 2, 0),

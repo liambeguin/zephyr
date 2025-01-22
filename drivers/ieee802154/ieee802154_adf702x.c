@@ -499,6 +499,65 @@ static int adf702x_regs_set_pa_level(const struct device *dev, float dBm)
 	return 0;
 }
 
+static int adf702x_read_adc_readback(const struct device *dev)
+{
+	uint8_t adc_rb_raw[2];
+	uint8_t adc_rb;
+
+	adf702x_ram_read(dev, ADF702X_REG_ADC_READBACK_HIGH, 2, adc_rb_raw);
+	/* LOG_INF("RAW[0] = 0x%x", adc_rb_raw[0]); */
+	/* LOG_INF("RAW[1] = 0x%x", adc_rb_raw[1]); */
+
+	adc_rb = FIELD_GET(0x3f, adc_rb_raw[0]) << 2 | FIELD_GET(0xc0, adc_rb_raw[1]);
+	/* LOG_INF("adc_rb = 0x%x", adc_rb); */
+
+	return adc_rb;
+}
+
+static int adf702x_read_rssi(const struct device *dev, float *rssi)
+{
+	const struct adf702x_config *conf = dev->config;
+	struct adf702x_context *ctx = dev->data;
+	uint8_t buf, gain;
+	uint8_t gain_corr;
+	uint8_t adc_rb;
+
+	buf = 0x40;
+	adf702x_ram_write(dev, ADF702X_REG_AGC_MODE, 1, &buf);
+	adf702x_ram_read(dev, ADF702X_REG_AGC_GAIN_STATUS, 1, &gain);
+	adc_rb = adf702x_read_adc_readback(dev);
+	buf = 0x00;
+	adf702x_ram_write(dev, ADF702X_REG_AGC_MODE, 1, &buf);
+
+	switch (gain) {
+	case 0x00:
+		gain_corr = 44;
+		break;
+	case 0x01:
+		gain_corr = 35;
+		break;
+	case 0x02:
+		gain_corr = 26;
+		break;
+	case 0x0A:
+		gain_corr = 17;
+		break;
+	case 0x12:
+		gain_corr = 10;
+		break;
+	case 0x16:
+		gain_corr = 0;
+		break;
+	default:
+		LOG_INST_ERR(conf->log, "Invalid gain value");
+		return -EINVAL;
+	}
+
+	*rssi = (adc_rb / 7) + gain_corr - 109;
+
+	return 0;
+}
+
 static void adf702x_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -691,6 +750,12 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 
 		adf702x_ram_read(dev, ADF702X_REG_RADIO_PA_LEVEL, 1, bram);
 		LOG_INST_WRN(conf->log, "PA_LEVEL readback: %02X", bram[0]);
+		break;
+	case IEEE802154_ATTR_ADF702X_RSSI:
+		float rssi;
+		adf702x_read_rssi(dev, &rssi);
+		LOG_ERR("RSSI = %.2f dBm", rssi);
+		/* value->phy_supported_channel_pages = bram[0]; */
 		break;
 	case IEEE802154_ATTR_ADF702X_RAW_REG:
 		adf702x_ram_read(dev, value->phy_supported_channel_pages, 1, bram);
