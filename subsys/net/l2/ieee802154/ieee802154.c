@@ -485,6 +485,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	int requires_fragmentation = 0;
 #endif
 
+#if 0
 	if (frame_buf == NULL) {
 		frame_buf = net_buf_alloc(&tx_frame_buf_pool, K_FOREVER);
 	}
@@ -578,6 +579,17 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		len += frame_buf->len;
 	}
 
+	net_pkt_unref(pkt);
+
+	return len;
+#endif
+	int ret;
+
+	ret = ieee802154_radio_tx(iface, IEEE802154_TX_MODE_DIRECT, pkt, pkt->buffer);
+	if(ret)
+		return ret;
+
+	len = pkt->buffer->len;
 	net_pkt_unref(pkt);
 
 	return len;
