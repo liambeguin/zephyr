@@ -37,6 +37,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_IEEE802154_DRIVER_LOG_LEVEL);
 
 #include "ieee802154_adf702x.h"
 
+#if defined(CONFIG_NET_L2_NSP)
+extern void nsp_l2_init(struct net_if *iface);
+#endif
 
 static int adf7024_regs_set_profile(const struct device *dev, enum adf7024_profile profile)
 {
@@ -558,22 +561,35 @@ static int adf702x_read_rssi(const struct device *dev, float *rssi)
 	return 0;
 }
 
+#if defined(CONFIG_NET_L2_NSP)
 static void adf702x_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 
-	sys_rand_get(ctx->mac, 8U);
-	net_if_set_link_addr(iface, ctx->mac, 8, NET_LINK_IEEE802154);
-
 	LOG_INST_DBG(conf->log, "iface init");
-	LOG_INST_HEXDUMP_DBG(conf->log, ctx->mac, 8, "MAC: ");
 
 	ctx->iface = iface;
+	nsp_l2_init(iface);
+}
+#else
+static void adf702x_iface_init(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct adf702x_config *conf = dev->config;
+	struct adf702x_context *ctx = dev->data;
+
+	LOG_INST_DBG(conf->log, "iface init");
+
+	ctx->iface = iface;
+	sys_rand_get(ctx->mac, 8U);
+	net_if_set_link_addr(iface, ctx->mac, 8, NET_LINK_IEEE802154);
+	LOG_INST_HEXDUMP_DBG(conf->log, ctx->mac, 8, "MAC: ");
 
 	ieee802154_init(iface);
 }
+#endif
 
 static enum ieee802154_hw_caps adf702x_get_capabilities(const struct device *dev)
 {
@@ -1028,10 +1044,12 @@ static int adf702x_init(const struct device *dev)
 			      CONFIG_IEEE802154_ADF702X_INIT_PRIO, &adf702x_radio_api)
 
 #define IEEE802154_ADF702X_NET_DEVICE_INIT(n)                                                      \
-	NET_DEVICE_DT_INST_DEFINE(n, &adf702x_init, NULL, &adf702x_ctx_data_##n,                   \
-				  &adf702x_ctx_config_##n, CONFIG_IEEE802154_ADF702X_INIT_PRIO,    \
-				  &adf702x_radio_api, IEEE802154_L2,                               \
-				  NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);
+	NET_DEVICE_DT_INST_DEFINE(                                                                 \
+		n, &adf702x_init, NULL, &adf702x_ctx_data_##n, &adf702x_ctx_config_##n,            \
+		CONFIG_IEEE802154_ADF702X_INIT_PRIO, &adf702x_radio_api,                           \
+		COND_CODE_1(CONFIG_NET_L2_NSP, (NSP_L2), (IEEE802154_L2)),                         \
+					       NET_L2_GET_CTX_TYPE(IEEE802154_L2),                 \
+					       IEEE802154_MTU);
 
 #define IEEE802154_ADF702X_INIT(inst)                                                              \
 	IEEE802154_ADF702X_DEVICE_CONFIG(inst);                                                    \
