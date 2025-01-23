@@ -18,6 +18,8 @@ source "subsys/net/l2/virtual/Kconfig"
 
 source "subsys/net/l2/ethernet/Kconfig"
 
+source "subsys/net/l2/nsp/Kconfig"
+
 source "subsys/net/l2/ppp/Kconfig"
 
 config NET_L2_PHY_IEEE802154

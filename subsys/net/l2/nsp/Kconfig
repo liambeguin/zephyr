@@ -1,0 +1,8 @@
+menuconfig NET_L2_NSP
+	bool "Custom NSP L2 layer over radio interface"
+	help
+	  Add support for stripped down WPAN IEEE 802.15.4.
+
+if NET_L2_NSP
+
+endif

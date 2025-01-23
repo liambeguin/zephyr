@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library()
+zephyr_library_compile_definitions_ifdef(
+	CONFIG_NEWLIB_LIBC __LINUX_ERRNO_EXTENSIONS__
+)
+
+zephyr_library_sources(
+	nsp.c
+)
