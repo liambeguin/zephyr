@@ -629,7 +629,6 @@ static int adf702x_filter(const struct device *dev,
 
 static int adf702x_set_txpower(const struct device *dev, int16_t dBm)
 {
-	struct adf702x_context *ctx = dev->data;
 	int ret;
 
 	adf702x_regs_set_pa_level(dev, dBm);
