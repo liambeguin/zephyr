@@ -935,7 +935,8 @@ static inline int adf702x_configure_irq(const struct device *dev)
 		return -ENXIO;
 	}
 
-	LOG_INST_INF(conf->log, "irq setup at %s pin %d", conf->irq_gpio.port->name, conf->irq_gpio.pin);
+	LOG_INST_DBG(conf->log, "irq setup at %s pin %d", conf->irq_gpio.port->name,
+		     conf->irq_gpio.pin);
 
 	return 0;
 }
