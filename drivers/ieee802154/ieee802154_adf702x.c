@@ -508,19 +508,15 @@ static int adf702x_read_adc_readback(const struct device *dev)
 	uint8_t adc_rb;
 
 	adf702x_ram_read(dev, ADF702X_REG_ADC_READBACK_HIGH, 2, adc_rb_raw);
-	/* LOG_INF("RAW[0] = 0x%x", adc_rb_raw[0]); */
-	/* LOG_INF("RAW[1] = 0x%x", adc_rb_raw[1]); */
 
 	adc_rb = FIELD_GET(0x3f, adc_rb_raw[0]) << 2 | FIELD_GET(0xc0, adc_rb_raw[1]);
-	/* LOG_INF("adc_rb = 0x%x", adc_rb); */
 
 	return adc_rb;
 }
 
-static int adf702x_read_rssi(const struct device *dev, float *rssi)
+static int adf702x_read_rssi(const struct device *dev, int *rssi)
 {
 	const struct adf702x_config *conf = dev->config;
-	struct adf702x_context *ctx = dev->data;
 	uint8_t buf, gain;
 	uint8_t gain_corr;
 	uint8_t adc_rb;
@@ -556,7 +552,7 @@ static int adf702x_read_rssi(const struct device *dev, float *rssi)
 		return -EINVAL;
 	}
 
-	*rssi = (adc_rb / 7) + gain_corr - 109;
+	*rssi = (int)(adc_rb / 7) + gain_corr - 109;
 
 	return 0;
 }
@@ -739,6 +735,7 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 	const struct adf702x_config *conf = dev->config;
 	struct adf702x_context *ctx = dev->data;
 	uint8_t bram[64] = {0};
+	int rssi = 0;
 
 	if (ieee802154_attr_get_channel_page_and_range(
 				attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
@@ -768,9 +765,8 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 		LOG_INST_WRN(conf->log, "PA_LEVEL readback: %02X", bram[0]);
 		break;
 	case IEEE802154_ATTR_ADF702X_RSSI:
-		float rssi;
 		adf702x_read_rssi(dev, &rssi);
-		LOG_ERR("RSSI = %.2f dBm", rssi);
+		LOG_ERR("RSSI = %d dBm", rssi);
 		/* value->phy_supported_channel_pages = bram[0]; */
 		break;
 	case IEEE802154_ATTR_ADF702X_RAW_REG:
