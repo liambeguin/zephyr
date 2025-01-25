@@ -891,7 +891,7 @@ static void adf702x_thread_main(void *p1, void *p2, void *p3)
 	while (true) {
 		k_sem_take(&ctx->isr_lock, K_FOREVER);
 		ret = adf702x_ram_read(dev, ADF702X_REG_INTERRUPT_SOURCE_0, 2, isr_status);
-		LOG_INST_INF(conf->log, "got IRQ 0x%x 0x%x", isr_status[0], isr_status[1]);
+		LOG_INST_DBG(conf->log, "got IRQ 0x%x 0x%x", isr_status[0], isr_status[1]);
 
 		if (isr_status[0] & ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_CRC_CORRECT) {
 			isr_update[0] |= ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_CRC_CORRECT;
