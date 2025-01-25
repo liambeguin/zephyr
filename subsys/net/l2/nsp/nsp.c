@@ -1,5 +1,5 @@
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(nsp_l2, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(nsp_l2, LOG_LEVEL_INF);
 #include <errno.h>
 
 #include <zephyr/net/capture.h>
