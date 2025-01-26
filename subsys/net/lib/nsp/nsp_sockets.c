@@ -138,7 +138,11 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 		}
 
 		memcpy(&rxpkt, buffer, ret);
-		ret = zbus_chan_pub(&nsp_in_chan, &rxpkt, K_SECONDS(1));
+		ret = zbus_chan_pub(&nsp_in_chan, &rxpkt, K_NO_WAIT);
+		if (ret) {
+			LOG_ERR("*** Failed to publish: (%d)", ret);
+			/* TODO: do better here */
+		}
 	}
 
 cleanup:
