@@ -14,12 +14,22 @@
 LOG_MODULE_REGISTER(nsp_sock, LOG_LEVEL_DBG);
 
 ZBUS_CHAN_DECLARE(nsp_in_chan, nsp_out_chan);
+ZBUS_MSG_SUBSCRIBER_DEFINE(nsp_tx_msg_sub);
+ZBUS_CHAN_ADD_OBS(nsp_out_chan, nsp_tx_msg_sub, 3);
 
 #define PRIORITY  k_thread_priority_get(k_current_get())
 #define STACKSIZE 1024
 
-int nsp_socket_send(const struct device *dev, struct nsp_pkt *pkt)
+static void nsp_sock_send_task(void *ptr1, void *ptr2, void *ptr3)
 {
+        ARG_UNUSED(ptr1);
+        ARG_UNUSED(ptr2);
+        ARG_UNUSED(ptr3);
+
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(nsp_tx));
+	const struct zbus_channel *chan;
+	struct nsp_pkt txpkt = {0};
+
 	struct net_if *iface = net_if_lookup_by_dev(dev);
 	struct msghdr msg = {0};
 	struct iovec io_vector;
@@ -34,8 +44,7 @@ int nsp_socket_send(const struct device *dev, struct nsp_pkt *pkt)
 	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (fd < 0) {
 		LOG_ERR("*** Failed to create RAW socket: %s", strerror(errno));
-		ret = -errno;
-		goto out;
+		return;
 	}
 
 	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
@@ -44,25 +53,33 @@ int nsp_socket_send(const struct device *dev, struct nsp_pkt *pkt)
 		goto release_fd;
 	}
 
-	io_vector.iov_base = pkt;
-	io_vector.iov_len = pkt->len + 4;
-	msg.msg_iov = &io_vector;
-	msg.msg_iovlen = 1;
+        while (!zbus_sub_wait_msg(&nsp_tx_msg_sub, &chan, &txpkt, K_FOREVER)) {
+                if (chan != &nsp_out_chan)
+			continue;
 
-	if (sendmsg(fd, &msg, 0) != pkt->len + 4) {
-		LOG_ERR("*** Failed to send: %s", strerror(errno));
-		ret = -errno;
-		goto release_fd;
-	}
+		io_vector.iov_base = &txpkt;
+		io_vector.iov_len = txpkt.len + 4;
+		msg.msg_iov = &io_vector;
+		msg.msg_iovlen = 1;
+
+		if (sendmsg(fd, &msg, 0) != txpkt.len + 4) {
+			LOG_ERR("*** Failed to send: %s", strerror(errno));
+			ret = -errno;
+			goto release_fd;
+		}
+
+		// clear after send
+		memset(&txpkt, 0, sizeof(txpkt));
+		memset(&io_vector, 0, sizeof(io_vector));
+		memset(&msg, 0, sizeof(msg));
+        }
 
 release_fd:
 	close(fd);
-out:
-	return ret;
 }
+K_THREAD_DEFINE(msg_subscriber_task_id, 1024, nsp_sock_send_task, NULL, NULL, NULL, 3, 0, 0);
 
-static k_tid_t rx_tid;
-static K_THREAD_STACK_DEFINE(rx_stack, STACKSIZE);
+static K_THREAD_STACK_DEFINE(rx_stack, NSP_RX_STACKSIZE);
 static struct k_thread rx_data;
 
 static void rx(int *rx_fd)

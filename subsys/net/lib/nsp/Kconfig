@@ -2,6 +2,7 @@ config NSP
 	bool "Socket NSP Library Support"
 	select NET_SOCKETS
 	select ZBUS
+	select ZBUS_MSG_SUBSCRIBER
 	help
 	  Enable the Zephyr NSP Library
 
