@@ -15,7 +15,6 @@ void simple_ep_cb(const struct zbus_channel *chan)
 {
 	const struct nsp_pkt *rxpkt = zbus_chan_const_msg(chan);
 	struct nsp_pkt txpkt = {0};
-	int ret;
 
         if (chan != &nsp_in_chan)
 		return;
@@ -24,14 +23,17 @@ void simple_ep_cb(const struct zbus_channel *chan)
         if (rxpkt->dst != NSP_SIMPLE_EP_ADDR)
 		return;
 
+	/* setup pkt */
+	txpkt.src = rxpkt->dst;
+	txpkt.dst = rxpkt->src;
+	txpkt.a = 0; // NACK
+	txpkt.pf = 1; // preset to finish
+	txpkt.cmd = rxpkt->cmd;
+
 	switch (rxpkt->cmd) {
 	case PING:
 		char *name = "Hello From Zephyr";
-		txpkt.src = rxpkt->dst;
-		txpkt.dst = rxpkt->src;
 		txpkt.a = 1; // ACK
-		txpkt.pf = 1; // done xmit
-		txpkt.cmd = rxpkt->cmd;
 		txpkt.payload = name;
 		txpkt.len = strlen(name);
 		break;
