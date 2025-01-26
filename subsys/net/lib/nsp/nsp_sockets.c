@@ -121,6 +121,7 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
                 memset(&msg, 0, sizeof(msg));
                 memset(&iov, 0, sizeof(iov));
                 memset(&rxpkt, 0, sizeof(rxpkt));
+                memset(buffer, 0, sizeof(buffer));
 
 		iov.iov_base = buffer;
 		iov.iov_len = sizeof(buffer);
