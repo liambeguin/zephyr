@@ -17,9 +17,6 @@ ZBUS_CHAN_DECLARE(nsp_in_chan, nsp_out_chan);
 ZBUS_MSG_SUBSCRIBER_DEFINE(nsp_tx_msg_sub);
 ZBUS_CHAN_ADD_OBS(nsp_out_chan, nsp_tx_msg_sub, 3);
 
-#define PRIORITY  k_thread_priority_get(k_current_get())
-#define STACKSIZE 1024
-
 static void nsp_sock_send_task(void *ptr1, void *ptr2, void *ptr3)
 {
         ARG_UNUSED(ptr1);
@@ -77,14 +74,18 @@ static void nsp_sock_send_task(void *ptr1, void *ptr2, void *ptr3)
 release_fd:
 	close(fd);
 }
-K_THREAD_DEFINE(msg_subscriber_task_id, 1024, nsp_sock_send_task, NULL, NULL, NULL, 3, 0, 0);
+K_THREAD_DEFINE(nsp_sock_send_task_id, 1024, nsp_sock_send_task, NULL, NULL, NULL, 3, 0, 0);
 
-static K_THREAD_STACK_DEFINE(rx_stack, NSP_RX_STACKSIZE);
-static struct k_thread rx_data;
-
-static void rx(int *rx_fd)
+static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 {
-        int fd = POINTER_TO_INT(rx_fd);
+        ARG_UNUSED(ptr1);
+        ARG_UNUSED(ptr2);
+        ARG_UNUSED(ptr3);
+
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(nsp_rx));
+	struct net_if *iface = net_if_lookup_by_dev(dev);
+
+	int fd;
 	uint8_t buffer[248] = {0};
 
 	struct sockaddr_in src_addr;
@@ -96,6 +97,23 @@ static void rx(int *rx_fd)
 	struct iovec iov = {0};
 
 	struct nsp_pkt rxpkt = {0};
+
+	struct sockaddr_ll socket_sll = {
+		.sll_ifindex = net_if_get_by_iface(iface),
+		.sll_family = AF_PACKET,
+	};
+
+	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+	if (fd < 0) {
+		LOG_ERR("*** Failed to create RAW socket: %s", strerror(errno));
+		return;
+	}
+
+	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
+		LOG_ERR("*** Failed to bind packet socket: %s", strerror(errno));
+		ret = -errno;
+		goto cleanup;
+	}
 
         LOG_INF("NSP: starting recv thread for fd=%d", fd);
 
@@ -122,50 +140,14 @@ static void rx(int *rx_fd)
 		ret = zbus_chan_pub(&nsp_in_chan, &rxpkt, K_SECONDS(1));
 	}
 
-	close(fd);
-}
-
-int nsp_transport_socket_register(const struct device *rxdev, const struct device *txdev)
-{
-	struct net_if *iface = net_if_lookup_by_dev(rxdev);
-	int ret = 0;
-	int fd;
-
-	struct sockaddr_ll socket_sll = {
-		.sll_ifindex = net_if_get_by_iface(iface),
-		.sll_family = AF_PACKET,
-	};
-
-	fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if (fd < 0) {
-		LOG_ERR("*** Failed to create RAW socket: %s", strerror(errno));
-		ret = -errno;
-		goto out;
-	}
-
-	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
-		LOG_ERR("*** Failed to bind packet socket: %s", strerror(errno));
-		ret = -errno;
-		goto cleanup;
-	}
-
-	rx_tid = k_thread_create(&rx_data, rx_stack,
-			K_THREAD_STACK_SIZEOF(rx_stack),
-			(k_thread_entry_t)rx,
-			INT_TO_POINTER(fd),
-			NULL,
-			NULL, PRIORITY, 0, K_NO_WAIT);
-	if (!rx_tid) {
-		ret = -ENOENT;
-		errno = -ret;
-		LOG_ERR("*** Failed to create rx thread: %s", strerror(errno));
-		goto cleanup;
-	}
-
-	return ret;
-
 cleanup:
 	close(fd);
-out:
-	return ret;
 }
+K_THREAD_DEFINE(nsp_sock_recv_task_id, 1024, nsp_sock_recv_task, NULL, NULL, NULL, 1, 0, 0);
+
+// TODO: replace nsp_transport_socket_register with these defines
+/* #define NSP_SOCK_TX_INIT(node_id, prop, idx) \ */
+	/* static const struct device *dev##idx = NULL; */
+	// register channel observer
+
+/* DT_FOREACH_PROP_ELEM(DT_PATH(nsp), nsp_tx_interfaces,  NSP_SOCK_TX_INIT); */
