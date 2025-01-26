@@ -10,5 +10,6 @@ list(APPEND CONF_FILE "prj.conf")
 find_package(Zephyr)
 
 project(pico_adf7024)
-file(GLOB app_src src/*.c)
-target_sources(app PRIVATE ${app_src})
+target_sources(app PRIVATE
+	src/main.c
+)

@@ -8,6 +8,9 @@
 / {
 	chosen {
 		led0 = &led0;
+
+		nsp,rx = &downlink;
+		nsp,tx = &uplink;
 	};
 };
 

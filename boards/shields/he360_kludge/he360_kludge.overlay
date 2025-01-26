@@ -8,6 +8,9 @@
 / {
 	chosen {
 		led0 = &led0;
+
+		nsp,rx = &adf7024_rx_800;
+		nsp,tx = &adf7024_tx_800;
 	};
 };
 
