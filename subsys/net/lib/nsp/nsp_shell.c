@@ -9,20 +9,64 @@
 #define NSP_ARGV_ADDR   (2)
 #define NSP_ARGV_VAL    (3)
 
+struct shell *shared_sh;
+
 ZBUS_CHAN_DECLARE(nsp_in_chan, nsp_out_chan);
+
+static void nsp_shell_rx_cb(const struct zbus_channel *chan)
+{
+	const struct nsp_pkt *rxpkt = zbus_chan_const_msg(chan);
+	char *pkthdr = NULL;
+
+        if (chan != &nsp_in_chan)
+		return;
+
+	rxpkt = (struct nsp_pkt *)zbus_chan_const_msg(chan);
+        if (rxpkt->dst != CONFIG_NSP_SHELL_SRC_ADDR)
+		return;
+
+	nsp_pkt_format_header(&pkthdr, rxpkt);
+
+        if (!rxpkt->a) {
+		shell_error(shared_sh, "%s: NACK", pkthdr);
+		shell_hexdump(shared_sh, rxpkt->payload, rxpkt->len);
+		free(pkthdr);
+		return;
+	}
+
+	switch (rxpkt->cmd) {
+	case PING:
+		shell_print(shared_sh, "%s: %*s", pkthdr, rxpkt->len, rxpkt->payload);
+		break;
+	case INIT:
+	case PEEK:
+	case POKE:
+	case TELEMETRY:
+	default:
+		shell_print(shared_sh, "%s: %*s", pkthdr, rxpkt->len, rxpkt->payload);
+		shell_hexdump(shared_sh, rxpkt->payload, rxpkt->len);
+		break;
+	};
+
+	free(pkthdr);
+}
+
+ZBUS_LISTENER_DEFINE(nsp_shell_rx, nsp_shell_rx_cb);
+ZBUS_CHAN_ADD_OBS(nsp_in_chan, nsp_shell_rx, 1);
 
 
 static int cmd_nsp_ping(const struct shell *sh, size_t argc, char **argv)
 {
-	struct nsp_pkt pkt = {0};
+	struct nsp_pkt txpkt = {0};
 
-	pkt.src = CONFIG_NSP_SHELL_SRC_ADDR;
-	pkt.dst = (int)strtol(argv[NSP_ARGV_EP], NULL, 16);
-	pkt.pf = 1;
+	shared_sh = (struct shell *)sh;
 
-	zbus_chan_pub(&nsp_out_chan, &pkt, K_NO_WAIT);
+	txpkt.src = CONFIG_NSP_SHELL_SRC_ADDR;
+	txpkt.dst = (int)strtol(argv[NSP_ARGV_EP], NULL, 16);
+	txpkt.cmd = PING;
+	txpkt.pf = 1;
 
-	return 0;
+	return nsp_send(&txpkt);
 }
 
 static int cmd_nsp_init(const struct shell *sh, size_t argc, char **argv)
