@@ -33,18 +33,6 @@ static inline int ieee802154_radio_stop(struct net_if *iface)
 	return radio->stop(net_if_get_device(iface));
 }
 
-static inline int ieee802154_radio_tx(struct net_if *iface, enum ieee802154_tx_mode mode,
-				      struct net_pkt *pkt, struct net_buf *buf)
-{
-	const struct ieee802154_radio_api *radio = net_if_get_device(iface)->api;
-
-	if (!radio) {
-		return -ENOENT;
-	}
-
-	return radio->tx(net_if_get_device(iface), mode, pkt, buf);
-}
-
 static enum net_verdict nsp_l2_recv(struct net_if *iface, struct net_pkt *pkt)
 {
 	/* The IEEE 802.15.4 stack assumes that drivers provide a single-fragment package. */
@@ -54,20 +42,23 @@ static enum net_verdict nsp_l2_recv(struct net_if *iface, struct net_pkt *pkt)
 	return NET_OK;
 }
 
-static int nsp_l2_send(struct net_if *iface, struct net_pkt *pkt)
+static inline int nsp_l2_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	int len;
+	const struct ieee802154_radio_api *api = net_if_get_device(iface)->api;
 	int ret;
 
-	ret = ieee802154_radio_tx(iface, IEEE802154_TX_MODE_DIRECT, pkt, pkt->buffer);
-	if (ret) {
-		return ret;
+	if (!api) {
+		return -ENOENT;
 	}
 
-	len = pkt->buffer->len;
-	net_pkt_unref(pkt);
+	net_capture_pkt(iface, pkt);
+	ret = api->tx(net_if_get_device(iface), IEEE802154_TX_MODE_DIRECT, pkt, pkt->buffer);
+	if (!ret) {
+		ret = net_pkt_get_len(pkt);
+		net_pkt_unref(pkt);
+	}
 
-	return len;
+	return ret;
 }
 
 static int nsp_l2_enable(struct net_if *iface, bool state)
