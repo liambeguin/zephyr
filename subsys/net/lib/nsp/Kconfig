@@ -1,0 +1,23 @@
+config NSP
+	bool "Socket NSP Library Support"
+	select NET_SOCKETS
+	select ZBUS
+	help
+	  Enable the Zephyr NSP Library
+
+
+if NSP
+
+module=NSP
+module-dep=NET_LOG
+module-str=Log level for NSP
+module-help=Enables NSP debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NSP_SHELL_SRC_ADDR
+	int "NSP source address for the shell application"
+	default 16
+	help
+	  Default shell endpoint source address
+
+endif # CONFIG_NSP
