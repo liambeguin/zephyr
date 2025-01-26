@@ -4,7 +4,6 @@ zephyr_library()
 
 zephyr_library_sources(
   nsp.c
-  nsp_utils.c
   nsp_sockets.c
 
   nsp_simple_ep.c
