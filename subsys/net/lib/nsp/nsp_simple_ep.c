@@ -45,7 +45,7 @@ void simple_ep_cb(const struct zbus_channel *chan)
 
 	// Only reply when PF is set on receive
 	if (rxpkt->pf)
-		ret = zbus_chan_pub(&nsp_out_chan, &txpkt, K_SECONDS(1));
+		nsp_send(&txpkt);
 }
 
 

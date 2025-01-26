@@ -53,3 +53,9 @@ ZBUS_CHAN_DEFINE(nsp_out_chan,
 		.len = 0,
 	)
 );
+
+
+int nsp_send(const struct nsp_pkt *pkt)
+{
+	return zbus_chan_pub(&nsp_out_chan, pkt, K_NO_WAIT);
+}
