@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(nsp_sock, LOG_LEVEL_DBG);
 
 ZBUS_CHAN_DECLARE(nsp_in_chan, nsp_out_chan);
 ZBUS_MSG_SUBSCRIBER_DEFINE(nsp_tx_msg_sub);
-ZBUS_CHAN_ADD_OBS(nsp_out_chan, nsp_tx_msg_sub, 3);
+ZBUS_CHAN_ADD_OBS(nsp_out_chan, nsp_tx_msg_sub, 2);
 
 static void nsp_sock_send_task(void *ptr1, void *ptr2, void *ptr3)
 {
@@ -24,13 +24,13 @@ static void nsp_sock_send_task(void *ptr1, void *ptr2, void *ptr3)
         ARG_UNUSED(ptr3);
 
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(nsp_tx));
+	struct net_if *iface = net_if_lookup_by_dev(dev);
+	static uint8_t buffer[NSP_BUFSIZE] = {0};
 	const struct zbus_channel *chan;
 	struct nsp_pkt txpkt = {0};
-
-	struct net_if *iface = net_if_lookup_by_dev(dev);
 	struct msghdr msg = {0};
 	struct iovec io_vector;
-	int ret = 0;
+	int len = 0;
 	int fd;
 
 	struct sockaddr_ll socket_sll = {
@@ -46,7 +46,6 @@ static void nsp_sock_send_task(void *ptr1, void *ptr2, void *ptr3)
 
 	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
 		LOG_ERR("*** Failed to bind packet socket: %s", strerror(errno));
-		ret = -errno;
 		goto release_fd;
 	}
 
@@ -54,27 +53,36 @@ static void nsp_sock_send_task(void *ptr1, void *ptr2, void *ptr3)
                 if (chan != &nsp_out_chan)
 			continue;
 
-		io_vector.iov_base = &txpkt;
-		io_vector.iov_len = txpkt.len + 4;
+		// header
+		net_buf_push_u8(txpkt.buf, txpkt.cmd);
+		net_buf_push_u8(txpkt.buf, txpkt.dst);
+		net_buf_push_u8(txpkt.buf, txpkt.src);
+
+		len = txpkt.buf->len;
+		memcpy(buffer, net_buf_pull_mem(txpkt.buf, len), len);
+
+		io_vector.iov_base = buffer;
+		io_vector.iov_len = len;
 		msg.msg_iov = &io_vector;
 		msg.msg_iovlen = 1;
 
-		if (sendmsg(fd, &msg, 0) != txpkt.len + 4) {
+		if (sendmsg(fd, &msg, 0) != len) {
 			LOG_ERR("*** Failed to send: %s", strerror(errno));
-			ret = -errno;
+			// TODO: do better
 			goto release_fd;
 		}
 
 		// clear after send
-		memset(&txpkt, 0, sizeof(txpkt));
+		memset(buffer, 0, len);
 		memset(&io_vector, 0, sizeof(io_vector));
 		memset(&msg, 0, sizeof(msg));
+		net_buf_unref(txpkt.buf);
         }
 
 release_fd:
 	close(fd);
 }
-K_THREAD_DEFINE(nsp_sock_send_task_id, 1024, nsp_sock_send_task, NULL, NULL, NULL, 3, 0, 0);
+K_THREAD_DEFINE(nsp_sock_send_task_id, 800, nsp_sock_send_task, NULL, NULL, NULL, 2, 0, 0);
 
 static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 {
@@ -84,17 +92,15 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(nsp_rx));
 	struct net_if *iface = net_if_lookup_by_dev(dev);
-
+	static uint8_t buffer[NSP_BUFSIZE] = {0};
+        int ret;
 	int fd;
-	uint8_t buffer[248] = {0};
 
 	struct sockaddr_in src_addr;
 	socklen_t addr_len = sizeof(src_addr);
-
-        int ret;
-
 	struct msghdr msg = {0};
 	struct iovec iov = {0};
+
 
 	struct nsp_pkt rxpkt = {0};
 
@@ -111,7 +117,6 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 
 	if (bind(fd, (const struct sockaddr *)&socket_sll, sizeof(struct sockaddr_ll))) {
 		LOG_ERR("*** Failed to bind packet socket: %s", strerror(errno));
-		ret = -errno;
 		goto cleanup;
 	}
 
@@ -120,7 +125,6 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
         while (1) {
                 memset(&msg, 0, sizeof(msg));
                 memset(&iov, 0, sizeof(iov));
-                memset(&rxpkt, 0, sizeof(rxpkt));
                 memset(buffer, 0, sizeof(buffer));
 
 		iov.iov_base = buffer;
@@ -137,7 +141,18 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 			break;
 		}
 
-		memcpy(&rxpkt, buffer, ret);
+		rxpkt.buf = net_buf_alloc(&nsp_pkt_pool, K_FOREVER);
+
+		if (ret < NSP_HDRSIZE) {
+			LOG_ERR("Packet too short");
+			continue;
+		}
+
+		rxpkt.src = buffer[0];
+		rxpkt.dst = buffer[1];
+		rxpkt.cmd = buffer[2];
+		net_buf_add_mem(rxpkt.buf, &buffer[3], ret - NSP_HDRSIZE);
+
 		ret = zbus_chan_pub(&nsp_in_chan, &rxpkt, K_NO_WAIT);
 		if (ret) {
 			LOG_ERR("*** Failed to publish: (%d)", ret);
@@ -148,7 +163,7 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 cleanup:
 	close(fd);
 }
-K_THREAD_DEFINE(nsp_sock_recv_task_id, 1024, nsp_sock_recv_task, NULL, NULL, NULL, 1, 0, 0);
+K_THREAD_DEFINE(nsp_sock_recv_task_id, 800, nsp_sock_recv_task, NULL, NULL, NULL, 1, 0, 0);
 
 // TODO: replace nsp_transport_socket_register with these defines
 /* #define NSP_SOCK_TX_INIT(node_id, prop, idx) \ */

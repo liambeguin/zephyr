@@ -21,4 +21,10 @@ config NSP_SHELL_SRC_ADDR
 	help
 	  Default shell endpoint source address
 
+config NSP_PACKET_COUNT
+	int "NSP packet buffer pool depth"
+	default 4
+	help
+	  NSP packet buffer pool depth
+
 endif # CONFIG_NSP

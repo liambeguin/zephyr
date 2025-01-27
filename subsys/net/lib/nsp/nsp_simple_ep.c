@@ -12,47 +12,54 @@
 LOG_MODULE_REGISTER(nsp_ep, LOG_LEVEL_DBG);
 
 ZBUS_CHAN_DECLARE(nsp_in_chan, nsp_out_chan);
+ZBUS_MSG_SUBSCRIBER_DEFINE(nsp_simple_ep);
+ZBUS_CHAN_ADD_OBS(nsp_in_chan, nsp_simple_ep, 2);
 
-
-void simple_ep_cb(const struct zbus_channel *chan)
+static void nsp_simple_ep_task(void *ptr1, void *ptr2, void *ptr3)
 {
-	const struct nsp_pkt *rxpkt = zbus_chan_const_msg(chan);
-	struct nsp_pkt txpkt = {0};
+        ARG_UNUSED(ptr1);
+        ARG_UNUSED(ptr2);
+        ARG_UNUSED(ptr3);
 
-        if (chan != &nsp_in_chan)
-		return;
+	const struct zbus_channel *chan;
+	struct nsp_pkt rxpkt;
+	NSP_PKT_DEFINE(txpkt);
 
-	rxpkt = zbus_chan_const_msg(chan);
-        if (rxpkt->dst != NSP_SIMPLE_EP_ADDR)
-		return;
+        while (!zbus_sub_wait_msg(&nsp_simple_ep, &chan, &rxpkt, K_FOREVER)) {
+                if (chan != &nsp_in_chan)
+			continue;
 
-	/* setup pkt */
-	txpkt.src = rxpkt->dst;
-	txpkt.dst = rxpkt->src;
-	txpkt.a = 0; // NACK
-	txpkt.pf = 1; // preset to finish
-	txpkt.cmd = rxpkt->cmd;
+		if (rxpkt.dst != NSP_SIMPLE_EP_ADDR)
+			continue;
 
-	switch (rxpkt->cmd) {
-	case PING:
-		char *name = "Zephyr " xstr(APP_BUILD_VERSION);
-		txpkt.a = 1; // ACK
-		txpkt.payload = name;
-		txpkt.len = strlen(name);
-		break;
-	case INIT:
-	case PEEK:
-	case POKE:
-	case TELEMETRY:
-	default:
-		break;
-	};
+		/* setup pkt */
+		net_buf_reset(txpkt.buf);
+		txpkt.buf = net_buf_ref(txpkt.buf); // this is ours
+		txpkt.src = rxpkt.dst;
+		txpkt.dst = rxpkt.src;
+		txpkt.a = 0; // NACK
+		txpkt.pf = 1; // preset to finish
+		txpkt.cmdid = rxpkt.cmdid;
 
-	// Only reply when PF is set on receive
-	if (rxpkt->pf)
-		nsp_send(&txpkt);
+		switch (rxpkt.cmdid) {
+		case PING:
+			char *name = "Zephyr " xstr(APP_BUILD_VERSION);
+			txpkt.a = 1; // ACK
+			net_buf_add_mem(txpkt.buf, name, strlen(name) + 1);
+			break;
+		case INIT:
+		case PEEK:
+		case POKE:
+		case TELEMETRY:
+		default:
+			break;
+		};
+
+		// Only reply when PF is set on receive
+		if (rxpkt.pf)
+			nsp_send(&txpkt);
+
+		net_buf_unref(rxpkt.buf); // unref borrowed reference
+        }
 }
-
-
-ZBUS_LISTENER_DEFINE(simple_ep, simple_ep_cb);
-ZBUS_CHAN_ADD_OBS(nsp_in_chan, simple_ep, 3);
+K_THREAD_DEFINE(nsp_simple_ep_task_id, 800, nsp_simple_ep_task, NULL, NULL, NULL, 2, 0, 0);

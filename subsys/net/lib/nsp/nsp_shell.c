@@ -12,58 +12,66 @@
 struct shell *shared_sh;
 
 ZBUS_CHAN_DECLARE(nsp_in_chan, nsp_out_chan);
+ZBUS_MSG_SUBSCRIBER_DEFINE(nsp_shell_rx);
+ZBUS_CHAN_ADD_OBS(nsp_in_chan, nsp_shell_rx, 3);
 
-static void nsp_shell_rx_cb(const struct zbus_channel *chan)
+static void nsp_shell_rx_task(void *ptr1, void *ptr2, void *ptr3)
 {
-	const struct nsp_pkt *rxpkt = zbus_chan_const_msg(chan);
+        ARG_UNUSED(ptr1);
+        ARG_UNUSED(ptr2);
+        ARG_UNUSED(ptr3);
+
+	const struct zbus_channel *chan;
+	struct nsp_pkt rxpkt;
 	char *pkthdr = NULL;
 
-        if (chan != &nsp_in_chan)
-		return;
+        while (!zbus_sub_wait_msg(&nsp_shell_rx, &chan, &rxpkt, K_FOREVER)) {
+                if (chan != &nsp_in_chan)
+			continue;
 
-	rxpkt = (struct nsp_pkt *)zbus_chan_const_msg(chan);
-        if (rxpkt->dst != CONFIG_NSP_SHELL_SRC_ADDR)
-		return;
+		if (rxpkt.dst != CONFIG_NSP_SHELL_SRC_ADDR)
+			continue;
 
-	nsp_pkt_format_header(&pkthdr, rxpkt);
+		nsp_pkt_format_header(&pkthdr, &rxpkt);
 
-        if (!rxpkt->a) {
-		shell_error(shared_sh, "%s: NACK", pkthdr);
-		shell_hexdump(shared_sh, rxpkt->payload, rxpkt->len);
+		if (!rxpkt.a) {
+			shell_error(shared_sh, "%s: NACK", pkthdr);
+			shell_hexdump(shared_sh, rxpkt.buf->data, rxpkt.buf->len);
+			free(pkthdr);
+			continue;
+		}
+
+		switch (rxpkt.cmdid) {
+		case PING:
+			shell_print(shared_sh, "%s: %*s", pkthdr, rxpkt.buf->len, rxpkt.buf->data);
+			break;
+		case INIT:
+		case PEEK:
+		case POKE:
+		case TELEMETRY:
+		default:
+			shell_print(shared_sh, "%s: %*s", pkthdr, rxpkt.buf->len, rxpkt.buf->data);
+			shell_hexdump(shared_sh, rxpkt.buf->data, rxpkt.buf->len);
+			break;
+		};
+
+		net_buf_unref(rxpkt.buf);
 		free(pkthdr);
-		return;
-	}
+        }
 
-	switch (rxpkt->cmd) {
-	case PING:
-		shell_print(shared_sh, "%s: %*s", pkthdr, rxpkt->len, rxpkt->payload);
-		break;
-	case INIT:
-	case PEEK:
-	case POKE:
-	case TELEMETRY:
-	default:
-		shell_print(shared_sh, "%s: %*s", pkthdr, rxpkt->len, rxpkt->payload);
-		shell_hexdump(shared_sh, rxpkt->payload, rxpkt->len);
-		break;
-	};
-
-	free(pkthdr);
 }
-
-ZBUS_LISTENER_DEFINE(nsp_shell_rx, nsp_shell_rx_cb);
-ZBUS_CHAN_ADD_OBS(nsp_in_chan, nsp_shell_rx, 1);
+K_THREAD_DEFINE(nsp_shell_rx_task_id, 600, nsp_shell_rx_task, NULL, NULL, NULL, 3, 0, 0);
 
 
 static int cmd_nsp_ping(const struct shell *sh, size_t argc, char **argv)
 {
-	struct nsp_pkt txpkt = {0};
+	NSP_PKT_DEFINE(txpkt);
 
 	shared_sh = (struct shell *)sh;
 
 	txpkt.src = CONFIG_NSP_SHELL_SRC_ADDR;
 	txpkt.dst = (int)strtol(argv[NSP_ARGV_EP], NULL, 16);
-	txpkt.cmd = PING;
+	txpkt.cmdid = PING;
 	txpkt.pf = 1;
 
 	return nsp_send(&txpkt);

@@ -26,8 +26,7 @@ static void nsp_tx_print_callback(const struct zbus_channel *chan)
 {
 	const struct nsp_pkt *pkt = zbus_chan_const_msg(chan);
 
-	// FIXME: This causes a HARD FAULT...
-	/* nsp_pkt_hexdump("TX: ", pkt); */
+	nsp_pkt_hexdump("TX: ", pkt);
 }
 
 ZBUS_LISTENER_DEFINE(nsp_tx_listener, nsp_tx_print_callback);
@@ -46,7 +45,7 @@ void nsp_pkt_format_header(char **header, const struct nsp_pkt *pkt)
                 pkt->pf ? 'P' : '-',
                 pkt->b  ? 'B' : '-',
                 pkt->a  ? 'A' : '-',
-                pkt->cmd, pkt->len);
+                pkt->cmdid, pkt->buf->len);
 }
 
 void nsp_pkt_hexdump(const char *header, const struct nsp_pkt *pkt)
@@ -54,7 +53,7 @@ void nsp_pkt_hexdump(const char *header, const struct nsp_pkt *pkt)
 	char *pkthdr = NULL;
 
 	nsp_pkt_format_header(&pkthdr, pkt);
-	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, pkt->payload, pkt->len, "%s%s", header, pkthdr);
+	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, pkt->buf->data, pkt->buf->len, "%s%s", header, pkthdr);
 	free(pkthdr);
 }
 
