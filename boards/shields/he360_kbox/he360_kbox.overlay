@@ -68,6 +68,18 @@
 		"GP26",
 		"GP27",
 		"err-status";
+
+	rx-enable-hog {
+		gpio-hog;
+		gpios = <14 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+
+	tx-enable-hog {
+		gpio-hog;
+		gpios = <15 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
 };
 
 &pico_i2c0 {
