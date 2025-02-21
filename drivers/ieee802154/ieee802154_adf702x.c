@@ -786,7 +786,7 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 static int adf702x_cw(const struct device *dev)
 {
 	const struct adf702x_config *conf = dev->config;
-	uint8_t auxram[] = {0x03};
+	uint8_t auxram[] = {ADF702X_VAL_VAR_TX_MODE_CARRIER};
 
 	LOG_INST_DBG(conf->log, "CW");
 

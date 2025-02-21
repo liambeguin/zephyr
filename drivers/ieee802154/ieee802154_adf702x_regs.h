@@ -10,6 +10,10 @@
 /* 0x000 - 0x00F Auxiliary RAM */
 // 0x000 - 0x00C Reserved
 #define ADF702X_REG_AUX_VAR_TX_MODE			0x00D
+#define ADF702X_VAL_VAR_TX_MODE_OFF				0x0
+#define ADF702X_VAL_VAR_TX_MODE_RAND				0x1
+#define ADF702X_VAL_VAR_TX_MODE_PREAMBLE			0x2
+#define ADF702X_VAL_VAR_TX_MODE_CARRIER				0x3
 // 0x00E - 0x00F Reserved
 
 /* 0x010 - 0x0FF Packet RAM */
