@@ -37,8 +37,7 @@ static void nsp_shell_rx_task(void *ptr1, void *ptr2, void *ptr3)
 		if (!rxpkt.a) {
 			shell_error(shared_sh, "%s: NACK", pkthdr);
 			shell_hexdump(shared_sh, rxpkt.buf->data, rxpkt.buf->len);
-			free(pkthdr);
-			continue;
+			goto clean;
 		}
 
 		switch (rxpkt.cmdid) {
@@ -55,8 +54,9 @@ static void nsp_shell_rx_task(void *ptr1, void *ptr2, void *ptr3)
 			break;
 		};
 
-		net_buf_unref(rxpkt.buf);
+clean:
 		free(pkthdr);
+		net_buf_unref(rxpkt.buf);
         }
 
 }
