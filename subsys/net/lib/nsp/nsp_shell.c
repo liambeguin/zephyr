@@ -7,6 +7,7 @@
 
 #define NSP_ARGV_EP     (1)
 #define NSP_ARGV_ADDR   (2)
+#define NSP_ARGV_CMD    (2)
 #define NSP_ARGV_LEN    (3)
 #define NSP_ARGV_VAL    (3)
 
@@ -140,12 +141,55 @@ static int cmd_nsp_poke(const struct shell *sh, size_t argc, char **argv)
 	return nsp_send(&txpkt);
 }
 
+static int cmd_nsp_raw(const struct shell *sh, size_t argc, char **argv)
+{
+	NSP_PKT_DEFINE(txpkt);
+
+	shared_sh = (struct shell *)sh;
+
+	txpkt.src = CONFIG_NSP_SHELL_SRC_ADDR;
+	txpkt.dst = (int)strtol(argv[NSP_ARGV_EP], NULL, 16);
+	txpkt.cmdid = (int)strtol(argv[NSP_ARGV_CMD], NULL, 16);
+	txpkt.pf = 1;
+
+	for (int i = NSP_ARGV_CMD + 1; i < argc; i++) {
+		char *type = strtok(argv[i], ":");
+		char *data = strtok(NULL, ":");
+
+		if (!data) {
+			shell_error(shared_sh, "unable to parse %s payload element", type);
+			net_buf_unref(txpkt.buf);
+			return -EINVAL;
+		}
+
+		if(!strcmp(type, "u8")) {
+			uint8_t value = strtol(data, NULL, 16);
+			net_buf_add_u8(txpkt.buf, value);
+		} else if(!strcmp(type, "u16")) {
+			uint16_t value = strtol(data, NULL, 16);
+			net_buf_add_le16(txpkt.buf, value);
+		} else if(!strcmp(type, "u32")) {
+			uint32_t value = strtol(data, NULL, 16);
+			net_buf_add_le32(txpkt.buf, value);
+		} else if(!strcmp(type, "str")) {
+			net_buf_add_mem(txpkt.buf, data, strlen(data) + 1);
+		} else {
+			shell_error(shared_sh, "bad payload format, unable to parse %s", type);
+			net_buf_unref(txpkt.buf);
+			return -EINVAL;
+		}
+	}
+
+	return nsp_send(&txpkt);
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	nsp_cmds,
 	SHELL_CMD_ARG(ping, NULL, "nsp ping <ep>", cmd_nsp_ping, 2, 0),
 	SHELL_CMD_ARG(init, NULL, "nsp init <ep> [addr]", cmd_nsp_init, 2, 1),
 	SHELL_CMD_ARG(peek, NULL, "nsp peek <ep> <addr> <len>", cmd_nsp_peek, 4, 0),
 	SHELL_CMD_ARG(poke, NULL, "nsp poke <ep> <addr> <value>", cmd_nsp_poke, 4, 0),
+	SHELL_CMD_ARG(raw,  NULL, "nsp raw <ep> <cmd> [type:val]...", cmd_nsp_raw, 2, 20),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(nsp, &nsp_cmds, "Nano Satellite Protocol (NSP) commands", NULL);
