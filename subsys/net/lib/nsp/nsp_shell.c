@@ -79,9 +79,20 @@ static int cmd_nsp_ping(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_nsp_init(const struct shell *sh, size_t argc, char **argv)
 {
-	shell_error(sh, "NSP init");
+	NSP_PKT_DEFINE(txpkt);
+	uint32_t addr = 0;
 
-	return 0;
+	shared_sh = (struct shell *)sh;
+
+	txpkt.src = CONFIG_NSP_SHELL_SRC_ADDR;
+	txpkt.dst = (int)strtol(argv[NSP_ARGV_EP], NULL, 16);
+	txpkt.cmdid = INIT;
+	txpkt.pf = 1;
+
+	addr = strtol(argv[NSP_ARGV_ADDR], NULL, 16);
+	net_buf_add_le32(txpkt.buf, addr);
+
+	return nsp_send(&txpkt);
 }
 
 static int cmd_nsp_peek(const struct shell *sh, size_t argc, char **argv)
