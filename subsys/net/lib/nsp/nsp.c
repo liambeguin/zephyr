@@ -7,13 +7,14 @@ LOG_MODULE_REGISTER(nsp, LOG_LEVEL_DBG);
 
 static void nsp_rx_print_callback(const struct zbus_channel *chan)
 {
+#if CONFIG_NSP_PACKET_LISTENER
 	const struct nsp_pkt *pkt = zbus_chan_const_msg(chan);
 
 	nsp_pkt_hexdump("RX: ", pkt);
+#endif
 }
 
 ZBUS_LISTENER_DEFINE(nsp_rx_listener, nsp_rx_print_callback);
-
 ZBUS_CHAN_DEFINE(nsp_in_chan,
 	struct nsp_pkt,
 	NULL,
@@ -24,9 +25,11 @@ ZBUS_CHAN_DEFINE(nsp_in_chan,
 
 static void nsp_tx_print_callback(const struct zbus_channel *chan)
 {
+#if CONFIG_NSP_PACKET_LISTENER
 	const struct nsp_pkt *pkt = zbus_chan_const_msg(chan);
 
 	nsp_pkt_hexdump("TX: ", pkt);
+#endif
 }
 
 ZBUS_LISTENER_DEFINE(nsp_tx_listener, nsp_tx_print_callback);

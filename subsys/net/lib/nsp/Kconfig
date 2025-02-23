@@ -27,4 +27,11 @@ config NSP_PACKET_COUNT
 	help
 	  NSP packet buffer pool depth
 
+config NSP_PACKET_LISTENER
+	bool "Enable NSP packet listener"
+	default y
+	help
+	  Enable NSP Packet Listeners, this will print a message each time a
+	  packet appears on the NSP zbus input and ouptut channels.
+
 endif # CONFIG_NSP
