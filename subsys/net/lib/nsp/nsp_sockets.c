@@ -153,9 +153,9 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 		rxpkt.cmd = buffer[2];
 		net_buf_add_mem(rxpkt.buf, &buffer[3], ret - NSP_HDRSIZE);
 
-		ret = zbus_chan_pub(&nsp_in_chan, &rxpkt, K_NO_WAIT);
+		ret = zbus_chan_pub(&nsp_in_chan, &rxpkt, K_MSEC(200));
 		if (ret) {
-			LOG_ERR("*** Failed to publish: (%d)", ret);
+			LOG_ERR("*** Failed to publish: %s (%d)", strerror(-ret), ret);
 			/* TODO: do better here */
 		}
 	}
@@ -164,10 +164,5 @@ cleanup:
 	close(fd);
 }
 K_THREAD_DEFINE(nsp_sock_recv_task_id, 800, nsp_sock_recv_task, NULL, NULL, NULL, 1, 0, 0);
-
-// TODO: replace nsp_transport_socket_register with these defines
-/* #define NSP_SOCK_TX_INIT(node_id, prop, idx) \ */
-	/* static const struct device *dev##idx = NULL; */
-	// register channel observer
-
+// TODO:  update to a DT_FOREACH and pass devices as arg
 /* DT_FOREACH_PROP_ELEM(DT_PATH(nsp), nsp_tx_interfaces,  NSP_SOCK_TX_INIT); */

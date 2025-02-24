@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <zephyr/net/nsp.h>
 #include <zephyr/zbus/zbus.h>
@@ -62,5 +63,12 @@ void nsp_pkt_hexdump(const char *header, const struct nsp_pkt *pkt)
 
 int nsp_send(const struct nsp_pkt *pkt)
 {
-	return zbus_chan_pub(&nsp_out_chan, pkt, K_NO_WAIT);
+	int ret = 0;
+
+	ret = zbus_chan_pub(&nsp_out_chan, pkt, K_MSEC(200));
+	if (ret < 0) {
+		LOG_ERR("failed to send packet: %s (%d)", strerror(-ret), ret);
+	}
+
+	return ret;
 }
