@@ -5,12 +5,19 @@
  */
 #include <zephyr/dt-bindings/ieee802154/ieee802154_adf702x.h>
 
+#define LOCAL_NSP 0
+
 / {
 	chosen {
 		led0 = &led0;
 
+#if LOCAL_NSP
 		nsp,rx = &adf7024_rx_800;
 		nsp,tx = &adf7024_tx_800;
+#else
+		nsp,rx = &ttc_downlink;
+		nsp,tx = &ttc_uplink;
+#endif
 	};
 };
 
@@ -30,6 +37,7 @@
 		reg = <0>;
 		spi-max-frequency = <1000000>;
 
+		adf702x,pa-level = "-10";
 		channel-frequency = <895000000>;
 		irq-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 	};
@@ -55,7 +63,6 @@
 		adf7024,radio-profile = <RADIO_PROFILE_B>;
 
 		adf702x,pa-level = "-5";
-		// adf702x,ext-pa-en;
 
 		irq-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
 	};
