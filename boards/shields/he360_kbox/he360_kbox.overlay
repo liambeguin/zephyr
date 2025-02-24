@@ -98,7 +98,7 @@
 		   <&gpio0 05 GPIO_ACTIVE_LOW>;
 
 	/* ADF7024DB3Z TX */
-	uplink: adf7024-tx-400@0 {
+	uplink: uplink-434@0 {
 		status = "okay";
 		compatible = "adi,adf702x";
 		reg = <0>;
@@ -111,7 +111,7 @@
 	};
 
 	/* ADF7024DB1Z RX */
-	adf7024_rx_800: downlink: adf7024-rx-800@1 {
+	adf7024_rx_800: downlink: downlink-895@1 {
 		status = "okay";
 		compatible = "adi,adf702x";
 		reg = <1>;
