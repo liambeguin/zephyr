@@ -196,6 +196,7 @@ static int cmd_adf702x_stop(const struct shell *sh, size_t argc, char **argv)
 	return net_if_down(iface);
 }
 
+#if CONFIG_IEEE802154_ADF702X_SHELL_RX_CMD
 static k_tid_t rx_tid;
 static K_THREAD_STACK_DEFINE(rx_stack, STACKSIZE);
 static struct k_thread rx_data;
@@ -284,6 +285,7 @@ cleanup:
 out:
 	return ret;
 }
+#endif /* CONFIG_IEEE802154_ADF702X_SHELL_RX_CMD */
 
 static int cmd_adf702x_tx(const struct shell *sh, size_t argc, char **argv)
 {
@@ -345,7 +347,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(rssi, &dsub_adf702x, "read RSSI", cmd_adf702x_rssi, 2, 0),
 	SHELL_CMD_ARG(dump, &dsub_adf702x, "dump ADF702x registers", cmd_adf702x_dump, 2, 0),
 	SHELL_CMD_ARG(cw, &dsub_adf702x, "control continuous carrier mode", cmd_adf702x_cw, 3, 0),
+#if CONFIG_IEEE802154_ADF702X_SHELL_RX_CMD
 	SHELL_CMD_ARG(rx, &dsub_adf702x, "start rx thread", cmd_adf702x_rx, 2, 0),
+#endif /* CONFIG_IEEE802154_ADF702X_SHELL_RX_CMD */
 	SHELL_CMD_ARG(tx, &dsub_adf702x, "Send raw data", cmd_adf702x_tx, 3, 250),
 	SHELL_SUBCMD_SET_END);
 

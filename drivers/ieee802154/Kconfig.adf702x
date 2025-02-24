@@ -36,4 +36,14 @@ config IEEE802154_ADF702X_SHELL
 	help
 	  Enable ADF702x shell commands, useful during debugging to send raw
 	  messages, and read statuses.
+
+config IEEE802154_ADF702X_SHELL_RX_CMD
+	bool "ADF702X debug shell"
+	default n
+	depends on IEEE802154_ADF702X_SHELL
+	help
+	  Enable ADF702x rx shell command. This starts up a new recv thread each
+	  time the command is run, and can take valuable resources on
+	  constrained systems.
+
 endif
