@@ -7,7 +7,6 @@ zephyr_library_sources(
   nsp_sockets.c
 
   nsp_simple_ep.c
-
-  nsp_shell.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_NSP_SHELL nsp_shell.c)

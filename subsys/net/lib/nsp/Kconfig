@@ -15,12 +15,6 @@ module-str=Log level for NSP
 module-help=Enables NSP debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
-config NSP_SHELL_SRC_ADDR
-	int "NSP source address for the shell application"
-	default 16
-	help
-	  Default shell endpoint source address
-
 config NSP_PACKET_COUNT
 	int "NSP packet buffer pool depth"
 	default 4
@@ -34,11 +28,27 @@ config NSP_PACKET_LISTENER
 	  Enable NSP Packet Listeners, this will print a message each time a
 	  packet appears on the NSP zbus input and ouptut channels.
 
+config NSP_SHELL
+	bool "NSP Shell"
+	default y
+	help
+	  Enable the NSP shell to easily interact with NSP endpoints
+
+if NSP_SHELL
+
+config NSP_SHELL_SRC_ADDR
+	int "NSP source address for the shell application"
+	default 16
+	help
+	  Default shell endpoint source address
+
 config NSP_SHELL_TIMEOUT_SECONDS
 	int "NSP shell timeout value in seconds"
 	default 1
 	help
 	  NSP shell timeout value in seconds. Any shell command will wait this
 	  many seconds to acquire a lock before proceeding.
+
+endif # CONFIG_NSP_SHELL
 
 endif # CONFIG_NSP
