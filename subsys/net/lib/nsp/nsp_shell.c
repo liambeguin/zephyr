@@ -79,7 +79,7 @@ clean:
         }
 
 }
-K_THREAD_DEFINE(nsp_shell_rx_task_id, 600, nsp_shell_rx_task, NULL, NULL, NULL, 3, 0, 0);
+K_THREAD_DEFINE(nsp_shell_rx_task_id, 620, nsp_shell_rx_task, NULL, NULL, NULL, 3, 0, 0);
 
 
 static int cmd_nsp_ping(const struct shell *sh, size_t argc, char **argv)
