@@ -34,4 +34,11 @@ config NSP_PACKET_LISTENER
 	  Enable NSP Packet Listeners, this will print a message each time a
 	  packet appears on the NSP zbus input and ouptut channels.
 
+config NSP_SHELL_TIMEOUT_SECONDS
+	int "NSP shell timeout value in seconds"
+	default 1
+	help
+	  NSP shell timeout value in seconds. Any shell command will wait this
+	  many seconds to acquire a lock before proceeding.
+
 endif # CONFIG_NSP

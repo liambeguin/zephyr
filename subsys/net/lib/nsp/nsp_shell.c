@@ -11,11 +11,26 @@
 #define NSP_ARGV_LEN    (3)
 #define NSP_ARGV_VAL    (3)
 
+#define NSP_SHELL_TIMEOUT K_SECONDS(CONFIG_NSP_SHELL_TIMEOUT_SECONDS)
+static K_SEM_DEFINE(completion_lock, 1, 1);
+
 struct shell *shared_sh;
 
 ZBUS_CHAN_DECLARE(nsp_in_chan, nsp_out_chan);
 ZBUS_MSG_SUBSCRIBER_DEFINE(nsp_shell_rx);
 ZBUS_CHAN_ADD_OBS(nsp_in_chan, nsp_shell_rx, 3);
+
+static int nsp_shell_sync()
+{
+	int ret;
+
+	ret = k_sem_take(&completion_lock, NSP_SHELL_TIMEOUT);
+	if (ret == -EAGAIN) {
+		shell_warn(shared_sh, "Previous command timed-out");
+	}
+
+	return ret;
+}
 
 static void nsp_shell_rx_task(void *ptr1, void *ptr2, void *ptr3)
 {
@@ -59,6 +74,8 @@ static void nsp_shell_rx_task(void *ptr1, void *ptr2, void *ptr3)
 clean:
 		free(pkthdr);
 		net_buf_unref(rxpkt.buf);
+
+		k_sem_give(&completion_lock);
         }
 
 }
@@ -75,6 +92,8 @@ static int cmd_nsp_ping(const struct shell *sh, size_t argc, char **argv)
 	txpkt.dst = (int)strtol(argv[NSP_ARGV_EP], NULL, 16);
 	txpkt.cmdid = PING;
 	txpkt.pf = 1;
+
+	nsp_shell_sync();
 
 	return nsp_send(&txpkt);
 }
@@ -93,6 +112,8 @@ static int cmd_nsp_init(const struct shell *sh, size_t argc, char **argv)
 
 	addr = strtol(argv[NSP_ARGV_ADDR], NULL, 16);
 	net_buf_add_le32(txpkt.buf, addr);
+
+	nsp_shell_sync();
 
 	return nsp_send(&txpkt);
 }
@@ -116,6 +137,8 @@ static int cmd_nsp_peek(const struct shell *sh, size_t argc, char **argv)
 	len = strtol(argv[NSP_ARGV_LEN], NULL, 16);
 	net_buf_add_le16(txpkt.buf, len);
 
+	nsp_shell_sync();
+
 	return nsp_send(&txpkt);
 }
 
@@ -137,6 +160,8 @@ static int cmd_nsp_poke(const struct shell *sh, size_t argc, char **argv)
 
 	value = strtol(argv[NSP_ARGV_VAL], NULL, 16);
 	net_buf_add_le32(txpkt.buf, value);
+
+	nsp_shell_sync();
 
 	return nsp_send(&txpkt);
 }
@@ -179,6 +204,8 @@ static int cmd_nsp_raw(const struct shell *sh, size_t argc, char **argv)
 			return -EINVAL;
 		}
 	}
+
+	nsp_shell_sync();
 
 	return nsp_send(&txpkt);
 }
