@@ -846,13 +846,13 @@ static void adf702x_process_rx_frame(const struct device *dev)
 	}
 
 	if (net_pkt_write(pkt, pkt_ram, len)) {
-		LOG_INST_DBG(conf->log, "No content read?");
+		LOG_INST_ERR(conf->log, "No content read?");
 		goto out;
 	}
 
 	LOG_INST_INF(conf->log, "caught packet %p (%u bytes)", pkt, len);
 	if (net_recv_data(ctx->iface, pkt) < 0) {
-		LOG_INST_DBG(conf->log, "Packet dropped by NET stack");
+		LOG_INST_ERR(conf->log, "Packet dropped by NET stack");
 		goto out;
 	}
 
