@@ -101,7 +101,6 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 	struct msghdr msg = {0};
 	struct iovec iov = {0};
 
-
 	struct nsp_pkt rxpkt = {0};
 
 	struct sockaddr_ll socket_sll = {
