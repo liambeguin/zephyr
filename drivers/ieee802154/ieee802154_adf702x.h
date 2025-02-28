@@ -83,6 +83,7 @@ struct adf702x_config {
 	uint8_t radio_profile;
 	float pa_level;
 	uint8_t ext_pa_en;
+	uint8_t sport_mode;
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 	uint8_t inst;

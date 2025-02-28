@@ -38,3 +38,15 @@ properties:
         other nonsleep state.
       0:
         external PA enable signal on ADCIN_ATB3 is disabled.
+
+  adf702x,sport-mode:
+    type: int
+    default: 0
+    description: |
+      0: Packet mode enabled.
+      1: |
+        Sport mode enabled. GP4 interrupt enabled on preamble detection.
+        Rx data enabled on preamble detection.
+      2: |
+        Sport mode enabled. GP4 interrupt enabled on sync word detection.
+        Rx data enabled on preamble detection.
