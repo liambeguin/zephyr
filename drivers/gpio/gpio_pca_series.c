@@ -45,6 +45,7 @@ LOG_MODULE_REGISTER(gpio_pca_series);
 enum gpio_pca_series_part_no {
 	PCA_PART_NO_PCA9538,
 	PCA_PART_NO_PCA9539,
+	PCA_PART_NO_PCA9506,
 	PCA_PART_NO_PCA9554,
 	PCA_PART_NO_PCA9555,
 	PCA_PART_NO_PCAL6524,
@@ -59,6 +60,7 @@ enum gpio_pca_series_part_no {
 const char *const gpio_pca_series_part_name[] = {
 	"pca9538",
 	"pca9539",
+	"pca9506",
 	"pca9554",
 	"pca9555",
 	"pcal6524",
@@ -2024,6 +2026,47 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9539 = {
 };
 
 /**
+ * @brief implement pca9506 driver
+ *
+ * @note flags = 0U
+ *
+ *       api set    :   pca9506
+ *       ngpios     :   40
+ *       part_no    :   pca9506
+ */
+#define GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9506 (5U)
+#define GPIO_PCA_FLAG_PCA_PART_NO_PCA9506 GPIO_PCA_SERIES_FLAG_TYPE_0
+#define GPIO_PCA_PART_CFG_PCA_PART_NO_PCA9506 (&gpio_pca_series_part_cfg_pca9506)
+static const uint8_t gpio_pca_series_reg_pca9506[] = {
+	0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
+	0x08, /** output_port */
+/*	0x10,     polarity_inversion  (unused, omitted) */
+	0x18, /** configuration */
+	PCA_REG_INVALID, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
+	PCA_REG_INVALID, /** input_latch if PCA_HAS_LATCH*/
+	PCA_REG_INVALID, /** pull_enable if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** pull_select if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** input_status if PCA_HAS_OUT_CONFIG, non-cacheable */
+	PCA_REG_INVALID, /** output_config if PCA_HAS_OUT_CONFIG */
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+	PCA_REG_INVALID, /** interrupt_mask if PCA_HAS_INT_MASK */
+	PCA_REG_INVALID, /** int_status if PCA_HAS_INT_MASK */
+	PCA_REG_INVALID, /** 2b_interrupt_edge if PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** interrupt_clear if PCA_HAS_INT_EXTEND, non-cacheable */
+# ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	PCA_REG_INVALID, /** 1b_input_history if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_rise if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_fall if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+# endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+};
+const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9506 = {
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9506,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCA9506,
+	.regs = gpio_pca_series_reg_pca9506,
+};
+
+/**
  * pca9555 share the same register layout with pca9539, with
  * RESET pin repurposed to another address strapping pin.
  * no difference from driver perspective.
@@ -2215,6 +2258,10 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6534 = {
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_pca9538
 DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCA9538)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pca9506
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCA9506)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_pca9539
