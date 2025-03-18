@@ -7,7 +7,6 @@
 
 #define xstr(s) str(s)
 #define str(s) #s
-#define NSP_SIMPLE_EP_ADDR 0x20
 
 LOG_MODULE_REGISTER(nsp_ep, LOG_LEVEL_DBG);
 
@@ -29,7 +28,7 @@ static void nsp_simple_ep_task(void *ptr1, void *ptr2, void *ptr3)
                 if (chan != &nsp_in_chan)
 			continue;
 
-		if (rxpkt.dst != NSP_SIMPLE_EP_ADDR)
+		if (rxpkt.dst != CONFIG_NSP_SIMPLE_EP_ADDR)
 			continue;
 
 		/* setup pkt */

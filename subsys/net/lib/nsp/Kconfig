@@ -64,4 +64,15 @@ config NSP_SHELL_TIMEOUT_SECONDS
 
 endif # CONFIG_NSP_SHELL
 
+
+if NSP_SIMPLE_EP
+
+config NSP_SIMPLE_EP_ADDR
+	hex "NSP address for the simple endpoint application"
+	default 0x20
+	help
+	  Default endpoint destination address for the simple ep app
+
+endif # NSP_SIMPLE_EP
+
 endif # CONFIG_NSP
