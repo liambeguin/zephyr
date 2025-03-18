@@ -17,7 +17,15 @@
 #else
 		nsp,rx = &ttc_downlink;
 		nsp,tx = &ttc_uplink;
+
+		nsp,uart = &cdcacm;
 #endif
+	};
+};
+
+&zephyr_udc0 {
+	cdcacm: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
 	};
 };
 
