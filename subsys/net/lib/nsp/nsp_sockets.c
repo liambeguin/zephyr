@@ -53,6 +53,11 @@ static void nsp_sock_send_task(void *ptr1, void *ptr2, void *ptr3)
                 if (chan != &nsp_out_chan)
 			continue;
 
+		if ((txpkt.dst & CONFIG_NSP_BACKEND_SOCK_TX_MASK) != txpkt.dst) {
+			LOG_DBG("Skipping because of netmask");
+			continue;
+		}
+
 		// header
 		net_buf_push_u8(txpkt.buf, txpkt.cmd);
 		net_buf_push_u8(txpkt.buf, txpkt.dst);

@@ -41,6 +41,12 @@ config NSP_SHELL
 	help
 	  Enable the NSP shell to easily interact with NSP endpoints
 
+config NSP_BACKEND_SOCK_TX_MASK
+	hex "NSP socket tx mask"
+	default 0xff
+	help
+	  NSP socket TX mask used to route packets
+
 if NSP_SHELL
 
 config NSP_SHELL_SRC_ADDR
