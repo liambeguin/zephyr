@@ -50,8 +50,8 @@ config NSP_BACKEND_SOCK_TX_MASK
 if NSP_SHELL
 
 config NSP_SHELL_SRC_ADDR
-	int "NSP source address for the shell application"
-	default 16
+	hex "NSP source address for the shell application"
+	default 0x10
 	help
 	  Default shell endpoint source address
 
