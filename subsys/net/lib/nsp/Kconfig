@@ -15,6 +15,8 @@ module-str=Log level for NSP
 module-help=Enables NSP debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+DT_CHOSEN_NSP_UART := nsp,uart
+
 config NSP_PACKET_COUNT
 	int "NSP packet buffer pool depth"
 	default 4
@@ -46,6 +48,19 @@ config NSP_BACKEND_SOCK_TX_MASK
 	default 0xff
 	help
 	  NSP socket TX mask used to route packets
+
+config NSP_BACKEND_UART
+	bool "NSP UART support"
+	select CRC
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_NSP_UART))
+	help
+	  Enable NSP support over uart
+
+config NSP_BACKEND_UART_TX_MASK
+	hex "NSP UART TX mask"
+	default 0xff
+	help
+	  NSP UART TX mask used to route packets
 
 if NSP_SHELL
 
