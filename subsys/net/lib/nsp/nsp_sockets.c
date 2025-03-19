@@ -60,8 +60,8 @@ static void nsp_sock_send_task(void *ptr1, void *ptr2, void *ptr3)
 
 		// header
 		net_buf_push_u8(txpkt.buf, txpkt.cmd);
-		net_buf_push_u8(txpkt.buf, txpkt.dst);
 		net_buf_push_u8(txpkt.buf, txpkt.src);
+		net_buf_push_u8(txpkt.buf, txpkt.dst);
 
 		len = txpkt.buf->len;
 		memcpy(buffer, net_buf_pull_mem(txpkt.buf, len), len);
@@ -152,8 +152,8 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 			continue;
 		}
 
-		rxpkt.src = buffer[0];
-		rxpkt.dst = buffer[1];
+		rxpkt.dst = buffer[0];
+		rxpkt.src = buffer[1];
 		rxpkt.cmd = buffer[2];
 		net_buf_add_mem(rxpkt.buf, &buffer[3], ret - NSP_HDRSIZE);
 

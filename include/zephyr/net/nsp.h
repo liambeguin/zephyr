@@ -19,8 +19,8 @@ typedef enum {
 } nsp_cmd_t;
 
 struct nsp_pkt {
-	uint8_t src;
 	uint8_t dst;
+	uint8_t src;
 
 	union {
 		uint8_t cmd;
