@@ -16,6 +16,7 @@ module-help=Enables NSP debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 DT_CHOSEN_NSP_UART := nsp,uart
+DT_CHOSEN_NSP_CAN := nsp,can
 
 config NSP_PACKET_COUNT
 	int "NSP packet buffer pool depth"
@@ -78,6 +79,20 @@ config NSP_BACKEND_UART_TX_MASK
 	default 0xff
 	help
 	  NSP UART TX mask used to route packets
+
+config NSP_BACKEND_CAN
+	bool "NSP CAN support"
+	select CRC
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_NSP_CAN))
+	help
+	  Enable NSP support over CAN
+
+config NSP_BACKEND_CAN_TX_MASK
+	hex "NSP CAN TX mask"
+	default 0xff
+	help
+	  NSP CAN TX mask used to route packets
+
 
 if NSP_SHELL
 

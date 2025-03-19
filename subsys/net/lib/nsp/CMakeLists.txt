@@ -8,6 +8,7 @@ zephyr_library_sources(
 )
 
 zephyr_library_sources_ifdef(CONFIG_NSP_BACKEND_UART nsp_uart.c)
+zephyr_library_sources_ifdef(CONFIG_NSP_BACKEND_CAN nsp_can.c)
 
 zephyr_library_sources_ifdef(CONFIG_NSP_FORWARDER nsp_forwarder.c)
 zephyr_library_sources_ifdef(CONFIG_NSP_SIMPLE_EP nsp_simple_ep.c)
