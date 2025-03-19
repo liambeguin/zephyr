@@ -43,6 +43,23 @@ config NSP_SHELL
 	help
 	  Enable the NSP shell to easily interact with NSP endpoints
 
+config NSP_FORWARDER
+	bool "NSP Forwarder"
+	default y
+	help
+	  Enable the NSP forwarder to send packets to another interface when
+	  applicable
+
+if NSP_FORWARDER
+config NSP_BACKEND_LOCAL_TX_MASK
+	hex "NSP mask for local packets"
+	default 0xff
+	help
+	  NSP mask for local packets.
+	  Used to not route packets meant to be processed locally
+endif
+
+# config NSP_BACKEND_SOCK
 config NSP_BACKEND_SOCK_TX_MASK
 	hex "NSP socket tx mask"
 	default 0xff
