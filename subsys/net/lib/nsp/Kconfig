@@ -62,23 +62,27 @@ endif
 
 # config NSP_BACKEND_SOCK
 config NSP_BACKEND_SOCK_TX_MASK
-	hex "NSP socket tx mask"
+	hex "NSP tx mask for socket backend"
 	default 0xff
 	help
-	  NSP socket TX mask used to route packets
+	  NSP tx mask for socket backend.
+	  Used to route packets to the correct interface
 
 config NSP_BACKEND_UART
 	bool "NSP UART support"
 	select CRC
 	default y if $(dt_chosen_enabled,$(DT_CHOSEN_NSP_UART))
 	help
-	  Enable NSP support over uart
+	  Enable NSP support over UART
 
+if NSP_BACKEND_UART
 config NSP_BACKEND_UART_TX_MASK
-	hex "NSP UART TX mask"
+	hex "NSP tx mask for UART backend"
 	default 0xff
 	help
-	  NSP UART TX mask used to route packets
+	  NSP tx mask for UART backend.
+	  Used to route packets to the correct interface
+endif
 
 config NSP_BACKEND_CAN
 	bool "NSP CAN support"
@@ -87,11 +91,14 @@ config NSP_BACKEND_CAN
 	help
 	  Enable NSP support over CAN
 
+if NSP_BACKEND_CAN
 config NSP_BACKEND_CAN_TX_MASK
-	hex "NSP CAN TX mask"
+	hex "NSP tx mask for CAN backend"
 	default 0xff
 	help
-	  NSP CAN TX mask used to route packets
+	  NSP tx mask for CAN backend.
+	  Used to route packets to the correct interface
+endif
 
 
 if NSP_SHELL
