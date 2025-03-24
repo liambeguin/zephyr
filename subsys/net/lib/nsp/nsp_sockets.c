@@ -146,6 +146,9 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 		}
 
 		rxpkt.buf = net_buf_alloc(&nsp_pkt_pool, K_FOREVER);
+		if(!rxpkt.buf) {
+			LOG_ERR("No more buffers");
+		}
 
 		if (ret < NSP_HDRSIZE) {
 			LOG_ERR("Packet too short");
@@ -168,5 +171,3 @@ cleanup:
 	close(fd);
 }
 K_THREAD_DEFINE(nsp_sock_recv_task_id, 800, nsp_sock_recv_task, NULL, NULL, NULL, 1, 0, 0);
-// TODO:  update to a DT_FOREACH and pass devices as arg
-/* DT_FOREACH_PROP_ELEM(DT_PATH(nsp), nsp_tx_interfaces,  NSP_SOCK_TX_INIT); */
