@@ -2,7 +2,7 @@
 #include <zephyr/net/nsp.h>
 #include <zephyr/zbus/zbus.h>
 
-LOG_MODULE_REGISTER(nsp_fwd, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(nsp_fwd, CONFIG_NSP_LOG_LEVEL);
 
 ZBUS_CHAN_DECLARE(nsp_in_chan, nsp_out_chan);
 ZBUS_MSG_SUBSCRIBER_DEFINE(nsp_fwd_msg_sub);

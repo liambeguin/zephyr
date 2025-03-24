@@ -10,10 +10,9 @@ config NSP
 if NSP
 
 module=NSP
-module-dep=NET_LOG
 module-str=Log level for NSP
 module-help=Enables NSP debug messages.
-source "subsys/net/Kconfig.template.log_config.net"
+source "subsys/logging/Kconfig.template.log_config"
 
 DT_CHOSEN_NSP_UART := nsp,uart
 DT_CHOSEN_NSP_CAN := nsp,can

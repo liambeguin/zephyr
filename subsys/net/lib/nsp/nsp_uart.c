@@ -8,7 +8,7 @@
 #include <zephyr/sys/crc.h>
 #include <zephyr/zbus/zbus.h>
 
-LOG_MODULE_REGISTER(nsp_uart, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(nsp_uart, CONFIG_NSP_LOG_LEVEL);
 
 ZBUS_CHAN_DECLARE(nsp_in_chan, nsp_out_chan);
 ZBUS_MSG_SUBSCRIBER_DEFINE(nsp_uart_msg_sub);

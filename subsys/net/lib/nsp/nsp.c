@@ -4,7 +4,7 @@
 #include <zephyr/zbus/zbus.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(nsp, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(nsp, CONFIG_NSP_LOG_LEVEL);
 
 static void nsp_rx_print_callback(const struct zbus_channel *chan)
 {

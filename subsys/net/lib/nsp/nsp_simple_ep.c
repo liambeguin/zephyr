@@ -8,7 +8,7 @@
 #define xstr(s) str(s)
 #define str(s) #s
 
-LOG_MODULE_REGISTER(nsp_ep, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(nsp_ep, CONFIG_NSP_LOG_LEVEL);
 
 ZBUS_CHAN_DECLARE(nsp_in_chan, nsp_out_chan);
 ZBUS_MSG_SUBSCRIBER_DEFINE(nsp_simple_ep);

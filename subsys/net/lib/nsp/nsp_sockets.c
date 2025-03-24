@@ -11,7 +11,7 @@
 
 #include <zephyr/zbus/zbus.h>
 
-LOG_MODULE_REGISTER(nsp_sock, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(nsp_sock, CONFIG_NSP_LOG_LEVEL);
 
 ZBUS_CHAN_DECLARE(nsp_in_chan, nsp_out_chan);
 ZBUS_MSG_SUBSCRIBER_DEFINE(nsp_tx_msg_sub);
