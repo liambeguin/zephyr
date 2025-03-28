@@ -73,6 +73,7 @@ static void nsp_can_rx_callback(const struct device *dev, struct can_frame *fram
 		// TODO: send NACK
 		net_buf_unref(rxpkt.buf);
 		rxpkt.buf = NULL;
+		inframe = 0;
 		return;
 	}
 
