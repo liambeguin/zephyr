@@ -30,6 +30,12 @@ config NSP_PACKET_LISTENER
 	  Enable NSP Packet Listeners, this will print a message each time a
 	  packet appears on the NSP zbus input and ouptut channels.
 
+config NSP_PRINT_ROUTING
+	bool "Enable NSP prints for packet routing"
+	default n
+	help
+	  Enable NSP prints for packet routing
+
 config NSP_SIMPLE_EP
 	bool "Enable NSP simple endpoint"
 	default y

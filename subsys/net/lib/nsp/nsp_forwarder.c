@@ -22,10 +22,12 @@ static void nsp_forwarder_task(void *ptr1, void *ptr2, void *ptr3)
                 if (chan != &nsp_in_chan)
 			continue;
 
-		if ((rxpkt.dst & CONFIG_NSP_BACKEND_LOCAL_TX_MASK) == rxpkt.dst)
+		if ((rxpkt.dst & CONFIG_NSP_BACKEND_LOCAL_TX_MASK) == rxpkt.dst) {
+#if CONFIG_NSP_PRINT_ROUTING
+			LOG_INF("local packet");
+#endif
 			continue;
-
-		LOG_INF("forwarding...");
+		}
 
 		nsp_send(&rxpkt);
 		// don't unref since the sending thread will do it!

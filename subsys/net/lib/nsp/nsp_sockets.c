@@ -53,10 +53,12 @@ static void nsp_sock_send_task(void *ptr1, void *ptr2, void *ptr3)
                 if (chan != &nsp_out_chan)
 			continue;
 
-		if ((txpkt.dst & CONFIG_NSP_BACKEND_SOCK_TX_MASK) != txpkt.dst) {
-			LOG_DBG("Skipping because of netmask");
+		if ((txpkt.dst & CONFIG_NSP_BACKEND_SOCK_TX_MASK) != txpkt.dst)
 			continue;
-		}
+
+#if CONFIG_NSP_PRINT_ROUTING
+		LOG_INF("Sending packet");
+#endif
 
 		// header
 		net_buf_push_u8(txpkt.buf, txpkt.cmd);
@@ -160,6 +162,9 @@ static void nsp_sock_recv_task(void *ptr1, void *ptr2, void *ptr3)
 		rxpkt.cmd = buffer[2];
 		net_buf_add_mem(rxpkt.buf, &buffer[3], ret - NSP_HDRSIZE);
 
+#if CONFIG_NSP_PRINT_ROUTING
+		LOG_INF("Received packet");
+#endif
 		ret = zbus_chan_pub(&nsp_in_chan, &rxpkt, K_MSEC(200));
 		if (ret) {
 			LOG_ERR("*** Failed to publish: %s (%d)", strerror(-ret), ret);

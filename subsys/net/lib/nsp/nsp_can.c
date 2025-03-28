@@ -80,6 +80,9 @@ static void nsp_can_rx_callback(const struct device *dev, struct can_frame *fram
 	rxpkt.src = net_buf_pull_u8(rxpkt.buf);
 	rxpkt.cmd = net_buf_pull_u8(rxpkt.buf);
 
+#if CONFIG_NSP_PRINT_ROUTING
+	LOG_INF("Received packet");
+#endif
 	ret = zbus_chan_pub(&nsp_in_chan, &rxpkt, K_MSEC(200));
 	if (ret) {
 		LOG_ERR("*** Failed to publish: %s (%d)", strerror(-ret), ret);
@@ -136,14 +139,15 @@ static void nsp_can_task(void *ptr1, void *ptr2, void *ptr3)
 	LOG_INF("registered RX callback");
 
 	while (!zbus_sub_wait_msg(&nsp_can_msg_sub, &chan, &txpkt, K_FOREVER)) {
-		if (chan != &nsp_out_chan) {
+		if (chan != &nsp_out_chan)
 			continue;
-		}
 
-		if ((txpkt.dst & CONFIG_NSP_BACKEND_CAN_TX_MASK) != txpkt.dst) {
-			LOG_INF("Skipping because of netmask");
+		if ((txpkt.dst & CONFIG_NSP_BACKEND_CAN_TX_MASK) != txpkt.dst)
 			continue;
-		}
+
+#if CONFIG_NSP_PRINT_ROUTING
+		LOG_INF("Sending packet");
+#endif
 
 		can_buf = net_buf_alloc(&nsp_pkt_pool, K_FOREVER);
 		memset(&frame, 0, sizeof(frame));

@@ -133,6 +133,9 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 				rxpkt.cmd = net_buf_pull_u8(uart_buf);
 				net_buf_add_mem(rxpkt.buf, uart_buf->data, uart_buf->len);
 
+#if CONFIG_NSP_PRINT_ROUTING
+				LOG_INF("Received packet");
+#endif
 				ret = zbus_chan_pub(&nsp_in_chan, &rxpkt, K_MSEC(200));
 				if (ret) {
 					LOG_ERR("*** Failed to publish: %s (%d)", strerror(-ret), ret);
@@ -220,10 +223,12 @@ static void nsp_uart_send_task(void *ptr1, void *ptr2, void *ptr3)
                 if (chan != &nsp_out_chan)
 			continue;
 
-		if ((txpkt.dst & CONFIG_NSP_BACKEND_UART_TX_MASK) != txpkt.dst) {
-			LOG_INF("Skipping because of netmask");
+		if ((txpkt.dst & CONFIG_NSP_BACKEND_UART_TX_MASK) != txpkt.dst)
 			continue;
-		}
+
+#if CONFIG_NSP_PRINT_ROUTING
+		LOG_INF("Sending packet");
+#endif
 
 		// header
 		net_buf_push_u8(txpkt.buf, txpkt.cmd);
