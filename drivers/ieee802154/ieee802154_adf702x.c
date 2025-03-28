@@ -465,23 +465,16 @@ static int adf702x_regs_set_channel_freq(const struct device *dev, uint32_t freq
 	return 0;
 }
 
-/**
- *
- * Using Figure 5, 7, and 9 the dBm output power with respect to PA_LEVEL_MCR
- * can be estimated with a linear equation betwen -16 and 14 dBm.
- * p0 = (4, -16)
- * p1 = (63, 13.5)
- *
- * dBm = (MCR / 2) - 18
- * MCR = 2 * dBm + 36
- *
- * This only supports the ADF7024.
- */
-static int adf702x_regs_set_pa_level(const struct device *dev, float dBm)
+static int adf702x_regs_set_pa_level(const struct device *dev, int8_t dBm)
 {
 	struct adf702x_context *ctx = dev->data;
+	uint8_t dbm_lookup[] = {
+		1, 2, 3, 4, 4, 5, 5, 6, 7, 8, 10, 11, 12,
+		15, 18, 20, 22, 25, 27, 28, 31, 33, 35,
+		37, 39, 41, 43, 45, 48, 50, 52, 54, 56, 58,
+	};
 
-	ctx->conf_regs.radio_pa_level = CLAMP((uint8_t)(dBm * 2 + 36), 0, 63);
+	ctx->conf_regs.radio_pa_level = dbm_lookup[CLAMP(dBm, -20, 13) + 20];
 
 	return 0;
 }
