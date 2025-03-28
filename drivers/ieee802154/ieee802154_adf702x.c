@@ -962,7 +962,8 @@ static int adf702x_init(const struct device *dev)
 	adf702x_set_command(dev, CMD_HW_RESET);
 	k_sleep(K_MSEC(1));
 
-	while(!(ctx->status & STATUS_CMD_READY))
+	while(!(ctx->status & STATUS_CMD_READY) &&
+			(FIELD_GET(STATUS_FW_STATE, ctx->status) != FW_STATE_PHY_OFF))
 		adf702x_get_status(dev);
 
 	ctx->conf_regs = adf702x_default_conf_regs;
