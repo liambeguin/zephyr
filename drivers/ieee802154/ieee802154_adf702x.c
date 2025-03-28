@@ -186,7 +186,6 @@ struct adf702x_conf_regs adf702x_default_conf_regs = {
 #else
 struct adf702x_conf_regs adf702x_default_conf_regs = {
 	.interrupt_mask0 = ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_TX_EOF |
-			   ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_SYNC_DETECT |
 			   ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_CRC_CORRECT,
 	.interrupt_mask1 = 0x00,
 	.number_of_wakeups0 = 0x00,
@@ -870,11 +869,6 @@ static void adf702x_thread_main(void *p1, void *p2, void *p3)
 			adf702x_process_rx_frame(dev);
 		}
 
-		if (isr_status[0] & ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_SYNC_DETECT) {
-			isr_update[0] |= ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_SYNC_DETECT;
-			adf702x_process_rx_frame(dev);
-		}
-
 		if (isr_status[0] & ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_TX_EOF) {
 			isr_update[0] |= ADF702X_BIT_INTERRUPT_MASK_0_INTERRUPT_TX_EOF;
 			adf702x_process_tx_frame(dev);
@@ -975,12 +969,6 @@ static int adf702x_init(const struct device *dev)
 	adf702x_regs_set_channel_freq(dev, conf->channel_frequency);
 	adf702x_regs_set_pa_level(dev, conf->pa_level);
 	adf7024_regs_set_profile(dev, conf->radio_profile);
-
-	if (conf->sport_mode) {
-		ctx->conf_regs.packet_length_control &= ~GENMASK(4, 3);
-		ctx->conf_regs.packet_length_control |= FIELD_PREP(GENMASK(4, 3), conf->sport_mode);
-	}
-
 	adf702x_regs_configure_gpios(dev);
 
 	adf702x_configure_device(dev);
@@ -1013,7 +1001,6 @@ static int adf702x_init(const struct device *dev)
 		.radio_profile = DT_INST_PROP_OR(n, adf7024_radio_profile, PROFILE_A),             \
 		.pa_level = DT_INST_STRING_UNQUOTED_OR(n, adf702x_pa_level, 13.5),                 \
 		.ext_pa_en = DT_INST_PROP_OR(n, adf702x_ext_pa_en, 0),                             \
-		.sport_mode = DT_INST_PROP_OR(n, adf702x_sport_mode, 0),                           \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, DT_INST_REG_ADDR_RAW(n))}
 
 #define IEEE802154_ADF702X_DEVICE_DATA(n) static struct adf702x_context adf702x_ctx_data_##n = {}
