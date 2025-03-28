@@ -386,23 +386,6 @@ static int adf702x_ram_dump_conf(const struct device *dev)
 	return 0;
 }
 
-static int adf702x_packet_read(const struct device *dev, const char *prefix)
-{
-	const struct adf702x_config *conf = dev->config;
-	uint8_t header[1] = {0};
-	uint8_t pram[256] = {0};
-	uint8_t len = 0;
-
-	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR, 1, header);
-	len = header[0] - 1;
-
-	adf702x_ram_read(dev, ADF702X_RX_BASE_ADR + 1, len, pram);
-	LOG_INST_DBG(conf->log, "%s Frame: length: %02X", prefix, len);
-	LOG_INST_HEXDUMP_DBG(conf->log, pram, len, "payload:");
-
-	return 0;
-}
-
 static int adf702x_ram_write(const struct device *dev, int addr, int len, uint8_t *data)
 {
 	const struct adf702x_config *conf = dev->config;
