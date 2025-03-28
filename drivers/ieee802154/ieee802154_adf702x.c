@@ -732,18 +732,13 @@ static int adf702x_attr_get(const struct device *dev, enum ieee802154_attr attr,
 		adf702x_print_status(dev);
 		break;
 	case IEEE802154_ATTR_ADF702X_POWER:
-		adf702x_ram_read(dev, ADF702X_REG_RADIO_PA_LEVEL, 1, bram);
-		LOG_INST_WRN(conf->log, "PA_LEVEL was: %02X", bram[0]);
-
 		adf702x_set_txpower(dev, value->phy_supported_channel_pages);
-
 		adf702x_ram_read(dev, ADF702X_REG_RADIO_PA_LEVEL, 1, bram);
-		LOG_INST_WRN(conf->log, "PA_LEVEL readback: %02X", bram[0]);
+		LOG_INST_INF(conf->log, "PA_LEVEL readback: %02d", bram[0]);
 		break;
 	case IEEE802154_ATTR_ADF702X_RSSI:
 		adf702x_read_rssi(dev, &rssi);
-		LOG_ERR("RSSI = %d dBm", rssi);
-		/* value->phy_supported_channel_pages = bram[0]; */
+		LOG_INST_INF(conf->log, "RSSI: %d dBm", rssi);
 		break;
 	case IEEE802154_ATTR_ADF702X_RAW_REG:
 		adf702x_ram_read(dev, value->phy_supported_channel_pages, 1, bram);
