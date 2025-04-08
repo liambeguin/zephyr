@@ -19,7 +19,7 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/drivers/i2c.h>
 
-#define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
+#define LOG_LEVEL LOG_LEVEL_DBG
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_pca_series);
 
@@ -364,6 +364,7 @@ static inline int gpio_pca_series_reg_write(const struct device *dev,
 
 	LOG_DBG("device write type %d addr 0x%x len %d", reg_type, addr, size);
 
+#if 1
 	msg[0].buf = (uint8_t *)&addr;
 	msg[0].len = 1;
 	msg[0].flags = I2C_MSG_WRITE;
@@ -371,10 +372,23 @@ static inline int gpio_pca_series_reg_write(const struct device *dev,
 	msg[1].len = size;
 	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 	ret = i2c_transfer_dt(&cfg->i2c, msg, 2);
+#else
+	uint8_t addr_and_buf[10] = {0};
+	addr_and_buf[0] = addr;
+
+	msg[0].buf = addr_and_buf;
+	msg[0].len = size + 1;
+	msg[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+	ret = i2c_transfer_dt(&cfg->i2c, msg, 1);
+#endif
 	if (ret) {
 		LOG_ERR("i2c write error [%d]", ret);
 		return ret;
 	}
+
+
+	LOG_ERR(" -- lvb write");
+	i2c_dump_msgs_rw(dev, msg, 2, addr, true);
 
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	if (gpio_pca_series_reg_cache_offset(dev, reg_type) != PCA_REG_INVALID) {
@@ -1919,6 +1933,37 @@ static const uint8_t gpio_pca_series_cache_map_pca953x[] = {
 };
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+/**
+ * cache map for flag = 0U
+ */
+static const uint8_t gpio_pca_series_cache_map_pca9506[] = {
+	PCA_REG_INVALID, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
+	PCA_REG_INVALID, /** output_port */
+/*	0x02,     polarity_inversion  (unused, omitted) */
+	PCA_REG_INVALID, /** configuration */
+	PCA_REG_INVALID, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
+	PCA_REG_INVALID, /** input_latch if PCA_HAS_LATCH*/
+	PCA_REG_INVALID, /** pull_enable if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** pull_select if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** input_status if PCA_HAS_OUT_CONFIG, non-cacheable */
+	PCA_REG_INVALID, /** output_config if PCA_HAS_OUT_CONFIG */
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+	PCA_REG_INVALID, /** interrupt_mask if PCA_HAS_INT_MASK,
+			   * non-cacheable if not PCA_HAS_INT_EXTEND
+			   */
+	PCA_REG_INVALID, /** int_status if PCA_HAS_INT_MASK, non-cacheable */
+	PCA_REG_INVALID, /** 2b_interrupt_edge if PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** interrupt_clear if PCA_HAS_INT_EXTEND, non-cacheable */
+# ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	PCA_REG_INVALID, /** 1b_input_history if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_rise if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_fall if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+# endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+};
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+
 static const uint8_t gpio_pca_series_reg_pca9538[] = {
 	0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
 	0x01, /** output_port */
@@ -2034,14 +2079,15 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9539 = {
  *       ngpios     :   40
  *       part_no    :   pca9506
  */
+#define PCA9506_AUTO_INC 0x80
 #define GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9506 (5U)
 #define GPIO_PCA_FLAG_PCA_PART_NO_PCA9506 GPIO_PCA_SERIES_FLAG_TYPE_0
 #define GPIO_PCA_PART_CFG_PCA_PART_NO_PCA9506 (&gpio_pca_series_part_cfg_pca9506)
 static const uint8_t gpio_pca_series_reg_pca9506[] = {
-	0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
-	0x08, /** output_port */
-/*	0x10,     polarity_inversion  (unused, omitted) */
-	0x18, /** configuration */
+	PCA9506_AUTO_INC | 0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
+	PCA9506_AUTO_INC | 0x08, /** output_port */
+/*	PCA9506_AUTO_INC | 0x10,     polarity_inversion  (unused, omitted) */
+	PCA9506_AUTO_INC | 0x18, /** configuration */
 	PCA_REG_INVALID, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
 	PCA_REG_INVALID, /** input_latch if PCA_HAS_LATCH*/
 	PCA_REG_INVALID, /** pull_enable if PCA_HAS_PULL */
@@ -2064,6 +2110,12 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9506 = {
 	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9506,
 	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCA9506,
 	.regs = gpio_pca_series_reg_pca9506,
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+# ifdef GPIO_NXP_PCA_SERIES_DEBUG
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA9506),
+# endif /* GPIO_NXP_PCA_SERIES_DEBUG */
+	.cache_map = gpio_pca_series_cache_map_pca9506,
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 };
 
 /**
